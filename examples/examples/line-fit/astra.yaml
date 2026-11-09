@@ -1,0 +1,53 @@
+spec_version: "0.1.0"
+
+analyses:
+  noisy:
+    url: file:///path/to/noisy-line
+    commit: "0000000000000000000000000000000000000000"
+
+decisions:
+  method:
+    label: Fitting method
+    rationale: >-
+      Least squares is the textbook fit, but a few outliers pull it; the Huber loss counts
+      large residuals linearly, so they pull less.
+    options:
+      ols:
+        label: Ordinary least squares
+      huber:
+        label: Huber loss
+        description: Squared for small residuals and linear for large ones, from the threshold HUBER_K in src/fit.py.
+
+outputs:
+  fit:
+    label: Fitted line
+    description: The slope and intercept of the line fitted to noisy-line's points.
+    type: table
+    format: json
+    inputs: [noisy.points]
+    decisions: [method]
+    recipe:
+      command: python3 src/fit.py {decisions.method} {inputs.noisy.points} {output}
+  comparison:
+    label: Least squares against Huber
+    description: Both fitted lines, and how far the Huber line is from the least-squares one.
+    type: table
+    format: json
+    inputs: [fit#ols, fit#huber]
+    recipe:
+      command: python3 src/compare.py {inputs.fit#ols} {inputs.fit#huber} {output}
+
+universes:
+  ols:
+    decisions: {method: ols}
+  huber:
+    decisions: {method: huber}
+
+findings:
+  outliers_lift_least_squares:
+    label: Outliers lift the least-squares line
+    claim: >-
+      The Huber line has a lower intercept than the least-squares line: the outliers, all
+      above the line, pull least squares up.
+    evidence:
+      - artifact: comparison

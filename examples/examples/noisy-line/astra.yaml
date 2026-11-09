@@ -1,0 +1,19 @@
+spec_version: "0.1.0"
+
+inputs:
+  config:
+    label: Generator settings
+    description: The true line, the noise around it, how many points, how many outliers, and the seed.
+    path: config.json
+
+outputs:
+  points:
+    label: Noisy points
+    description: >-
+      Points (x, y) scattered around the line y = slope x + intercept, with Gaussian noise
+      and a few outliers well above the line. The same settings always give the same points.
+    type: data
+    format: csv
+    inputs: [config]
+    recipe:
+      command: python3 src/make_points.py {inputs.config} {output}

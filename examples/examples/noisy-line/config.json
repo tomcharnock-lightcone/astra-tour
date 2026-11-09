@@ -1,0 +1,8 @@
+{
+  "slope": 2.0,
+  "intercept": 1.0,
+  "noise": 0.5,
+  "points": 30,
+  "outliers": 3,
+  "seed": 7
+}
