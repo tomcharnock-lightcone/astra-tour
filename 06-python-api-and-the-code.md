@@ -42,13 +42,13 @@ $ cd work/06/build/line-fit
 - `ASTRA_TOOLS` is the astra-tools checkout whose `src/astra` the `python` on PATH imports
   (`repos/astra-tools`, which `bootstrap.sh` made): the folder that holds `src/astra/api.py`.
   Steps 7, 9 and 10 grep it and run its tests, read only.
-- The whole chapter assumes that checkout at `2a05099` (`v0.1-conformance`) or later, its venv
+- The whole chapter assumes that checkout at `0ed225a` (the "Conformance" milestone), its venv
   built with astra-spec installed from `../astra-spec-pinned` at the commit in its
   `astra-spec.pin`, as its CLAUDE.md's *Development* says and `bootstrap.sh` does. `src/`'s
-  code is the same from `8813f52` on; `2a05099` changes only citations in docstrings, which
-  step 9 greps.
-  `tests/test_conformance.py` arrives in `c0b6edb` and `astra-spec.pin` in `76885b8`: without
-  them, step 10 finds no conformance cases.
+  code is the same from the "Review" milestone (`d7b20ec`) on; `0ed225a` changes only
+  citations in docstrings, which step 9 greps.
+  `tests/test_conformance.py` arrives in `0ed225a` and `astra-spec.pin` in the "Release"
+  milestone (`e75fc13`): without them, step 10 finds no conformance cases.
 - The ids hold only where `python3 --version` prints 3.14 after `source env.sh`: run.py's
   records name the `python3` on PATH (`urn:astra-examples:cpython-3.14`). On another version,
   every id from noisy-line's `Build the points` on differs (the setup warns), and so do the
@@ -733,9 +733,9 @@ What to notice, and why it matters when reading:
   clear` removes it. A reader racing a runner sees the old record or the new one, never half of
   one.
 - **Citations follow the pin.** A bare `§n` is the specification's, at the commit in
-  `astra-spec.pin`; `design §n` is the design's. `c0b6edb` moved the pin from astra-spec
+  `astra-spec.pin`; `design §n` is the design's. `0ed225a` moved the pin from astra-spec
   6c0ddb4, where §3 was *Conformance* and §4 *Conventions*, to 69b35f4, past astra-spec's
-  9e18deb, which puts *Conventions* first. `2a05099` then moved the citations: validity and
+  9e18deb, which puts *Conventions* first, and moved the citations with it: validity and
   levels are [§4](https://astra-spec.org/0.1/specification/#4-conformance), *Fields*
   [§3](https://astra-spec.org/0.1/specification/#3-conventions). The design document is the
   exception: it names the specification it was written against (`6c0ddb4`, in its header), so

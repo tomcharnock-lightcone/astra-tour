@@ -20,9 +20,9 @@ nix develop          # Python 3.14, uv, git, jq, perl, as the flake pins them
 ```
 
 `bootstrap.sh` clones astra-tools and astra-spec into `repos/` (git-ignored), checks out
-astra-tools `2a05099` and, beside it, astra-spec at the commit in its `astra-spec.pin`
-(`69b35f4`), and builds astra-tools' environment with every extra and the dev tools. It clones
-from GitHub; while those commits aren't there, name another remote that has them:
+astra-tools `0ed225a` (its "Conformance" milestone) and, beside it, astra-spec at the commit in
+its `astra-spec.pin` (`69b35f4`), and builds astra-tools' environment with every extra and the
+dev tools. It clones from GitHub; to clone from another remote that has those commits:
 
 ```bash
 ASTRA_TOOLS_URL=<gitea>/astra-tools.git ASTRA_SPEC_URL=<gitea>/astra-spec.git ./bootstrap.sh
@@ -59,8 +59,9 @@ Things to know before step 1:
   `nix shell 'nixpkgs#jq'`, you can skip that.
 - **Citations.** `§n` and `Annex X` are the specification at astra-spec `69b35f4`, linked at
   astra-spec.org/0.1. `design §n` is astra-tools' `design/2026-11-07-v0.1-tooling-design.md`.
-  `src/astra/<path>.py:<line>` points into astra-tools: its `src/` code is the same from
-  `8813f52` to `2a05099`, and only docstring citations changed in between, each in place.
+  `src/astra/<path>.py:<line>` points into astra-tools: its `src/` code is the same from the
+  "Review" milestone (`d7b20ec`) to `0ed225a`, and only docstring citations changed in between,
+  each in place.
   `examples/…` is the tour's copy of astra-examples.
 - **The specification versus astra-tools.** Each chapter says which is which. These are
   astra-tools' own: the three own codes, the plan's notes, the four JSON shapes, the exit

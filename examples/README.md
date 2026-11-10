@@ -19,7 +19,7 @@ and `check.py` rebuilds everything and checks that every command below prints wh
 ## Setting up
 
 You need git, Python 3.11 or later, and astra-tools from its `v0.1-rebuild` branch, here at
-`8813f52`, which reads ASTRA 0.1 at astra-spec `6c0ddb4`. Set it up as its CLAUDE.md's
+`d7b20ec`, which reads ASTRA 0.1 at astra-spec `6c0ddb4`. Set it up as its CLAUDE.md's
 *Development* section says, then put its environment first on your PATH, so that `astra` and
 the Python that has astra-tools are the ones run:
 

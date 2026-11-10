@@ -10,7 +10,7 @@
 # fetches and checks out again, and keeps what is already there.
 set -euo pipefail
 
-ASTRA_TOOLS_COMMIT=2a05099c6a8625bcc087c05f1814a57892b1c69c
+ASTRA_TOOLS_COMMIT=0ed225acc37a214b111bfc367a97a350ffd1e4a4  # the "Conformance" milestone
 : "${ASTRA_TOOLS_URL:=https://github.com/LightconeResearch/astra-tools.git}"
 : "${ASTRA_SPEC_URL:=https://github.com/LightconeResearch/astra-spec.git}"
 
