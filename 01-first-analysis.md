@@ -396,7 +396,7 @@ $ jq -c '{comment: ."$comment", rules: (.rules | length), errors: (.errors | len
 $ jq -c '[.rules[].layer] | group_by(.) | map({(.[0]): length}) | add' "$RULES"
 {"check":7,"parse":1,"runner":10,"schema":14,"validator":31}
 $ jq -c '.rules[] | select(.code == "STALE_RESULT")' "$RULES"
-{"code":"STALE_RESULT","layer":"check","level":"MUST","source":"§20 Checking results","statement":"Since the commit in a result's record, nothing has changed in its output's declaration (command, inputs and their order, decisions, format), the options its decisions select in its universe, the content of its inputs, never what stands in for it, or the results it reads","status":"`stale`"}
+{"code":"STALE_RESULT","layer":"check","level":"MUST","statement":"Nothing the result is made from has changed since its record's commit","status":"`stale`"}
 $ jq -r '.errors["https://w3id.org/astra/dev/analysis.schema.json#/$defs/OutputType/enum"]' "$RULES"
 INVALID_VALUE
 $ astra rules | grep -v '^  '
@@ -421,8 +421,8 @@ $ astra rules | tail -4
 
 $ astra rules missing_input_file
 MISSING_INPUT_FILE
-validator, MUST, §7 Inputs
-An input's `path` names a file (not a symlink, folder or gitlink), or something the validator recognises as a stand-in for one
+validator, MUST
+An input's `path` names a file (no symlink, folder or gitlink) or a stand-in
 $ astra rules UNSUPPORTED_SPEC_VERSION
 UNSUPPORTED_SPEC_VERSION
 validator, MUST, astra-tools

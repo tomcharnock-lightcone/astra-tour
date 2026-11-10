@@ -674,8 +674,8 @@ $ astra validate
 astra.yaml: valid, 0 error(s), 0 warning(s)
 $ astra rules COMMIT_NOT_FOUND
 COMMIT_NOT_FOUND
-validator, MUST, §17 Analyses from another commit or repository
-A declaration with a `path` and a `commit`, in a file not read from a remote, names a commit of the repository that holds the declaring `astra.yaml`
+validator, MUST
+In a file not read from a remote, a `path` and `commit` name a commit of the file's repository
 $ astra rules REMOTE_UNREACHABLE
 REMOTE_UNREACHABLE
 validator, MUST, astra-tools
@@ -685,7 +685,7 @@ Every commit the stack gets from a remote (§17) can be got
 - `COMMIT_NOT_FOUND`, the specification's code: a `path` and `commit` in a file not read from a remote is read only from the repository that holds the declaring file (`stack.py:320-322`), never from a store. It is reported at the `commit` value (`4:29`), and `COMMIT_NOT_ANCESTOR` isn't checked on it (design §4.13 case 3, `commits.py:52-59`).
 - Offline with an empty cache, `REMOTE_UNREACHABLE`, astra-tools' own error (design §3), at the declaration (`5:5`, the `noisy` map), as in chapter 1's Try 4. `--offline` exists only on `validate`; `check`, `plan`, `info` and `history` always may fetch.
 - The last `validate` fetches again, and the cache is back to one store with one blob.
-- `astra rules` says whose each code is: §17's, or astra-tools' own, from its table `OWN` beside `rules.json`'s (`src/astra/diagnostics.py:60`).
+- `astra rules` says whose each code is: the specification's, by its layer and level alone, or astra-tools' own, marked "astra-tools", from its table `OWN` beside `rules.json`'s (`src/astra/diagnostics.py:60`).
 
 </details>
 

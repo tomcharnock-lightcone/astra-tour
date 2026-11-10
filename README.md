@@ -20,8 +20,9 @@ nix develop          # Python 3.14, uv, git, jq, perl, as the flake pins them
 ```
 
 `bootstrap.sh` clones astra-tools and astra-spec into `repos/` (git-ignored), checks out
-astra-tools `0ed225a` (its "Conformance" milestone) and, beside it, astra-spec at the commit in
-its `astra-spec.pin` (`69b35f4`), and builds astra-tools' environment with every extra and the
+astra-tools `ecbe950` (the head of its `v0.1-rebuild`) and, beside it, astra-spec at the commit
+in its `astra-spec.pin` (`7de4f21`, the short specification), and builds astra-tools' environment
+with every extra and the
 dev tools. It clones from GitHub; to clone from another remote that has those commits:
 
 ```bash
@@ -57,11 +58,14 @@ Things to know before step 1:
 - **Elided output.** The astra version string shows as `0.2.19.dev…`, and test timings as `…s`.
 - **jq.** `nix develop` puts jq on PATH. Where a chapter says to get it through
   `nix shell 'nixpkgs#jq'`, you can skip that.
-- **Citations.** `§n` and `Annex X` are the specification at astra-spec `69b35f4`, linked at
-  astra-spec.org/0.1. `design §n` is astra-tools' `design/2026-11-07-v0.1-tooling-design.md`.
-  `src/astra/<path>.py:<line>` points into astra-tools: its `src/` code is the same from the
-  "Review" milestone (`d7b20ec`) to `0ed225a`, and only docstring citations changed in between,
-  each in place.
+- **Citations.** `§n` and `Annex X` are the long specification, as astra-tools' code cites it:
+  astra-spec's tag `v0.1-long-spec`, which the clone has
+  (`git -C repos/astra-spec show v0.1-long-spec:docs/specification.md`). Its links to
+  astra-spec.org/0.1 name the long specification's anchors. The specification astra-tools runs
+  against is the short one, at `repos/astra-spec-pinned/docs/specification.md`: Elements,
+  Results, Rules and Schema files. `design §n` is astra-tools'
+  `design/2026-11-07-v0.1-tooling-design.md`. `src/astra/<path>.py:<line>` points into
+  astra-tools at `ecbe950`.
   `examples/…` is the tour's copy of astra-examples.
 - **The specification versus astra-tools.** Each chapter says which is which. These are
   astra-tools' own: the three own codes, the plan's notes, the four JSON shapes, the exit

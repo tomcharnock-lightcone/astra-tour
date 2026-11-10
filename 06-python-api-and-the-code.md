@@ -42,13 +42,10 @@ $ cd work/06/build/line-fit
 - `ASTRA_TOOLS` is the astra-tools checkout whose `src/astra` the `python` on PATH imports
   (`repos/astra-tools`, which `bootstrap.sh` made): the folder that holds `src/astra/api.py`.
   Steps 7, 9 and 10 grep it and run its tests, read only.
-- The whole chapter assumes that checkout at `0ed225a` (the "Conformance" milestone), its venv
-  built with astra-spec installed from `../astra-spec-pinned` at the commit in its
-  `astra-spec.pin`, as its CLAUDE.md's *Development* says and `bootstrap.sh` does. `src/`'s
-  code is the same from the "Review" milestone (`d7b20ec`) on; `0ed225a` changes only
-  citations in docstrings, which step 9 greps.
-  `tests/test_conformance.py` arrives in `0ed225a` and `astra-spec.pin` in the "Release"
-  milestone (`e75fc13`): without them, step 10 finds no conformance cases.
+- The whole chapter assumes that checkout at `ecbe950` (the head of its `v0.1-rebuild`), its
+  venv built with astra-spec installed from `../astra-spec-pinned` at the commit in its
+  `astra-spec.pin` (`7de4f21`, the short specification), as its CLAUDE.md's *Development* says
+  and `bootstrap.sh` does.
 - The ids hold only where `python3 --version` prints 3.14 after `source env.sh`: run.py's
   records name the `python3` on PATH (`urn:astra-examples:cpython-3.14`). On another version,
   every id from noisy-line's `Build the points` on differs (the setup warns), and so do the
@@ -469,7 +466,7 @@ astra.yaml breaks a MUST: `astra validate` says where
 >>> from astra.diagnostics import Catalogue, OWN
 >>> catalogue = Catalogue.load()
 >>> catalogue.rule("UNKNOWN_OPTION")
-Rule(code='UNKNOWN_OPTION', layer='validator', level='MUST', statement="Every option named by a condition, option reference or selection is one of its decision's options", source='§8 Decisions and options', status=None)
+Rule(code='UNKNOWN_OPTION', layer='validator', level='MUST', statement="Each option a condition, option reference or selection names is one of its decision's", source=None, status=None)
 >>> catalogue.level("UNKNOWN_OPTION"), catalogue.level("COMMIT_NOT_ANCESTOR")
 ('error', 'warning')
 >>> list(OWN)
@@ -479,8 +476,8 @@ Rule(code='UNKNOWN_OPTION', layer='validator', level='MUST', statement="Every op
 >>> exit()
 $ astra rules UNKNOWN_OPTION
 UNKNOWN_OPTION
-validator, MUST, §8 Decisions and options
-Every option named by a condition, option reference or selection is one of its decision's options
+validator, MUST
+Each option a condition, option reference or selection names is one of its decision's
 $ git checkout --quiet astra.yaml
 $ cd "$ASTRA_TOOLS"
 $ git grep -n '"UNKNOWN_OPTION"' -- src/astra
@@ -515,9 +512,10 @@ What to notice:
   (Try 1). `astra check` would exit 1 on the errors even with every status unchanged
   (`CheckReport.ok`).
 - The trace: the message gives the code; `Catalogue.rule` gives rules.json's row (layer, level,
-  section); the section is
-  [§8](https://astra-spec.org/0.1/specification/#8-decisions-and-options); the code in quotes,
-  `'"UNKNOWN_OPTION"'`, finds the module's `CODES` and the line that reports it. A validator
+  statement), with no section, since the short specification's rules.json gives none
+  (`source=None`); the code in quotes, `'"UNKNOWN_OPTION"'`, finds the module's `CODES` and the
+  line that reports it, and the module's docstring names its section,
+  [§8](https://astra-spec.org/0.1/specification/#8-decisions-and-options). A validator
   code lives in `rules/<module>.py`, one module per section of Part II, but for
   `NOT_IN_REPOSITORY`, in `validate.py` (`src/astra/validate.py:92`). `contract.py` holds
   `UNSUPPORTED_SPEC_VERSION` and `INVALID_RECORD`, which `check.py` also attaches.
@@ -732,11 +730,12 @@ What to notice, and why it matters when reading:
   `Path.rename`: a new remote store into place, and a namespace set aside before `astra cache
   clear` removes it. A reader racing a runner sees the old record or the new one, never half of
   one.
-- **Citations follow the pin.** A bare `§n` is the specification's, at the commit in
-  `astra-spec.pin`; `design §n` is the design's. `0ed225a` moved the pin from astra-spec
-  6c0ddb4, where §3 was *Conformance* and §4 *Conventions*, to 69b35f4, past astra-spec's
-  9e18deb, which puts *Conventions* first, and moved the citations with it: validity and
-  levels are [§4](https://astra-spec.org/0.1/specification/#4-conformance), *Fields*
+- **Citations follow the long specification.** A bare `§n` is the long specification's, at
+  astra-spec's tag `v0.1-long-spec`, not the short one at the commit in `astra-spec.pin`
+  (CLAUDE.md's *Design*); `design §n` is the design's. The citations moved from astra-spec
+  6c0ddb4, where §3 was *Conformance* and §4 *Conventions*, to `v0.1-long-spec`, past
+  astra-spec's 9e18deb, which puts *Conventions* first: validity and levels are
+  [§4](https://astra-spec.org/0.1/specification/#4-conformance), *Fields*
   [§3](https://astra-spec.org/0.1/specification/#3-conventions). The design document is the
   exception: it names the specification it was written against (`6c0ddb4`, in its header), so
   its `§3` for the four roles is right as it stands.
@@ -777,7 +776,7 @@ How the suite is organised, and how to run one test of it.
 ```console
 $ cd "$ASTRA_TOOLS"
 $ cat astra-spec.pin
-69b35f4243f52ec70e16652e7cbc24698bf7b11e
+7de4f21e57a7f23231821a5c3a4b6c560274f36b
 $ python -m pytest -q -p no:cacheprovider --collect-only | sed -n 's/::.*//p' | sort | uniq -c | sort -rn | head -8
     125 tests/test_fixtures.py
      75 tests/test_check.py
@@ -936,7 +935,8 @@ recorded, not the file (`src/astra/check.py:484`).
 
 3. Predict the module that reports each of `RESULT_IN_TWO_PLACES`, `INVALID_SYNTAX`,
    `REMOTE_UNREACHABLE` and `MISPLACED_RECORD`, from its layer and section alone
-   (`astra rules CODE` gives both). Then find them.
+   (`astra rules CODE` gives the layer, and the long specification's tables the section). Then
+   find them.
 
 <details><summary>Answer</summary>
 
@@ -1051,10 +1051,10 @@ $ cd ../line-fit
   evidence, walkable in a few lines.
 - The four JSON shapes are astra-tools' own, made by hand-written `to_json` methods; `--json`
   prints exactly those dicts, and the exit codes belong to the CLI.
-- A diagnostic traces as message, code, `Catalogue.rule` (rules.json's row), section, then
-  `git grep '"CODE"'`: validator codes in `rules/<section>.py` (`NOT_IN_REPOSITORY` in
-  `validate.py`), check codes in `check.py`, parse in `load.py`, schema through `contract.py`'s
-  error map, and `UNSUPPORTED_SPEC_VERSION` in `contract.py` itself.
+- A diagnostic traces as message, code, `Catalogue.rule` (rules.json's row), then
+  `git grep '"CODE"'`, and the module's section: validator codes in `rules/<section>.py`
+  (`NOT_IN_REPOSITORY` in `validate.py`), check codes in `check.py`, parse in `load.py`, schema
+  through `contract.py`'s error map, and `UNSUPPORTED_SPEC_VERSION` in `contract.py` itself.
 - Environment schemes and stand-ins plug in through the entry-point groups `astra.environments`
   and `astra.standins`, each an object with a protocol's members; that is how lightcone-cli would
   add its own.

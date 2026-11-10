@@ -10,7 +10,7 @@
 # fetches and checks out again, and keeps what is already there.
 set -euo pipefail
 
-ASTRA_TOOLS_COMMIT=0ed225acc37a214b111bfc367a97a350ffd1e4a4  # the "Conformance" milestone
+ASTRA_TOOLS_COMMIT=ecbe9504a6ecb8ed303176b51e836d0e4ecc3d9f  # v0.1-rebuild: the short specification
 : "${ASTRA_TOOLS_URL:=https://github.com/LightconeResearch/astra-tools.git}"
 : "${ASTRA_SPEC_URL:=https://github.com/LightconeResearch/astra-spec.git}"
 
@@ -41,7 +41,8 @@ else
 fi
 
 echo "astra-tools' environment, on $("${UV_PYTHON:-python3}" --version)"
-(cd "$repos/astra-tools" && uv sync --quiet --frozen --all-extras)
+(cd "$repos/astra-tools" && uv sync --quiet --frozen --all-extras \
+  --reinstall-package astra-tools --reinstall-package astra-spec)
 
 "$repos/astra-tools/.venv/bin/astra" --version
 "$repos/astra-tools/.venv/bin/python" -c 'import rapidfuzz, linkml_runtime' && echo "the extras load"
