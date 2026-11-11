@@ -87,9 +87,9 @@ Under the hood:
 
 - `astra validate` calls `api.validate` (`src/astra/cli/validate.py:26`). It finds the
   repository that holds PATH and reads its working tree through a `WorktreeReader`
-  (`src/astra/api.py:250-257`: the repository at 250, the reader at 254 outside one, 256
+  (`src/astra/api.py:251-258`: the repository at 251, the reader at 255 outside one, 257
   inside); with no `astra.yaml` there it raises `NoAnalysisError`
-  (`src/astra/api.py:260`), which `environment()` prints as `astra: …` with exit 2
+  (`src/astra/api.py:261`), which `environment()` prints as `astra: …` with exit 2
   (`src/astra/cli/__init__.py:94`).
 - `validate.validated` (`src/astra/validate.py:75`) is the whole pipeline: the catalogue from
   `rules.json` (81), binding, which loads and schema-checks every file of the stack (82), the
@@ -165,8 +165,8 @@ Under the hood:
   (127-139), which prefers `problem_mark` to `context_mark` (133).
 - `_check_json` (142-160) then walks the value for what JSON can't hold: a key that isn't a
   string, a number that isn't finite, a value of a tag beyond the core schema's.
-- `stack._check` (`src/astra/stack.py:280-290`) catches the `ParseError`, places it at
-  pointer `""` (288), and returns no document, so the contract is never called.
+- `stack._check` (`src/astra/stack.py:298-308`) catches the `ParseError`, places it at
+  pointer `""` (306), and returns no document, so the contract is never called.
 
 ## 3. The schema layer: pointer, line, column, key
 
@@ -259,7 +259,7 @@ report   UNKNOWN_FIELD at /outputs/points/recipe 19:7 key comand: `comand` isn't
 report   MISSING_FIELD at /outputs/points/recipe 19:7: `recipe` lacks `command`
 $ git checkout -q astra.yaml
 $ python -c 'from astra.diagnostics import Catalogue; c = Catalogue.load(); print(c.version, "|", len(c.errors), "error locations"); by = {}; [by.setdefault(code, set()).add(key.rpartition("/")[2]) for key, code in c.errors.items()]; [print(code, *sorted(kws)) for code, kws in sorted(by.items())]'
-ASTRA rule catalogue, schema version dev | 285 error locations
+ASTRA rule catalogue, schema version dev | 296 error locations
 DUPLICATE_ENTRY uniqueItems
 EMPTY_COLLECTION minItems minProperties
 INVALID_COMMIT pattern
@@ -269,14 +269,15 @@ INVALID_ID pattern propertyNames
 INVALID_IMPORT if not required
 INVALID_PATH pattern
 INVALID_REFERENCE pattern
+INVALID_SWITCH if not required
 INVALID_VALUE enum minimum pattern
-MISSING_FIELD required
+MISSING_FIELD if required
 UNKNOWN_FIELD additionalProperties
 URL_WITHOUT_COMMIT if required
 WRONG_TYPE type
 ```
 
-The last command groups the 285 keys by code and prints the keyword (the key's last segment)
+The last command groups the 296 keys by code and prints the keyword (the key's last segment)
 behind each.
 
 What to notice:
@@ -287,9 +288,10 @@ What to notice:
   `…#/$defs/Output__identifier_optional/properties/inputs/minItems`.
 - The `$id` says `/dev/`, as chapter 1's step 6 showed: a release's say `/0.1/`, so each key
   names its minor version (Annex D *URIs*).
-- 285 locations, every one a schema-layer code. The map is many to one: every `type` keyword is
-  `WRONG_TYPE`, every `required` outside an `allOf` check `MISSING_FIELD`. A keyword alone
-  doesn't give the code: `pattern` is one of five codes, by where it sits.
+- 296 locations, every one a schema-layer code. The map is many to one: every `type` keyword is
+  `WRONG_TYPE`, every `required` outside an `allOf` check `MISSING_FIELD`, and so is the one
+  inside the check that an output other than a switch has a `type`, a `format` and a `recipe`. A
+  keyword alone doesn't give the code: `pattern` is one of five codes, by where it sits.
 - `if` and `propertyNames` are keys too, beside the keywords inside them. rules.json gives a
   code to both places; jsonschema reports only the keyword inside (`required` under a `then`,
   `pattern` under `propertyNames`), so astra-tools never looks up an `if` or a `propertyNames`
@@ -369,15 +371,15 @@ What to notice:
 
 Under the hood:
 
-- `bind` (`src/astra/stack.py:225`): `read()` (237-249) loads and checks each file and keeps
-  no `analysis` where any diagnostic was found (245). A root with no analysis, or in no
-  repository, returns `Bound(None, …)` at once (253-254): no declaration followed, no address
+- `bind` (`src/astra/stack.py:242`): `read()` (254-266) loads and checks each file and keeps
+  no `analysis` where any diagnostic was found (262). A root with no analysis, or in no
+  repository, returns `Bound(None, …)` at once (270-271): no declaration followed, no address
   resolved.
 - `validated` runs the rules only where there is a stack, and reports `NOT_IN_REPOSITORY`
   itself, at pointer `""` with no line (`src/astra/validate.py:84-94`).
-- For a declared analysis, `Stack.determined()` (`src/astra/stack.py:189-194`) yields only the
+- For a declared analysis, `Stack.determined()` (`src/astra/stack.py:206-211`) yields only the
   valid files, so no rule reads an invalid one, and the declaration's outcome becomes `invalid`
-  (266-267).
+  (283-284).
 - The version gate is `Contract.check_analysis` (`src/astra/contract.py:89-96`). `_version`
   (131-135) takes only a well-formed string, so `0.1`, unquoted `0.1` and a missing version all
   fall through to the schema.
@@ -422,8 +424,8 @@ astra.rules.inputs INPUT_IN_ANOTHER_ANALYSIS INPUT_NOT_TRACKED MISSING_INPUT_FIL
 astra.rules.decisions UNKNOWN_OPTION
 astra.rules.outputs AMBIGUOUS_ID OUTPUT_CYCLE
 astra.rules.recipes UNDECLARED_TEMPLATE_REF
-astra.rules.universes DERIVED_FROM_CYCLE EXCLUDED_OPTION_SELECTED INACTIVE_DECISION INCOMPATIBLE_OPTIONS MISSING_REQUIRED_OPTION UNKNOWN_DERIVED_FROM
-astra.rules.pins INPUT_NOT_BUILT PIN_INACTIVE
+astra.rules.universes DERIVED_FROM_CYCLE EXCLUDED_OPTION_SELECTED INACTIVE_DECISION INCOMPATIBLE_OPTIONS MISSING_REQUIRED_OPTION UNKNOWN_DERIVED_FROM UNUSED_DECISION
+astra.rules.pins PIN_NOT_BUILT
 astra.rules.insights INVALID_INSIGHT_REF
 astra.rules.declarations CLASHING_RESULT_NAME DECLARATION_OUTSIDE_REPOSITORY MISSING_DECLARED_ANALYSIS
 astra.rules.driving DUPLICATE_ELEMENT LOOPING_KEY MISSING_DECISION NOT_BUILT_IN_UNIVERSE RESULT_IN_TWO_PLACES UNDRIVEN_DECLARATION UNKNOWN_PIN_UNIVERSE
@@ -443,9 +445,9 @@ What to notice:
 - One edit, two rules again: the command's `{inputs.noisy.points}` no longer names an entry as
   written, so `UNDECLARED_TEMPLATE_REF` comes with `UNRESOLVED_ADDRESS`.
 - One cycle, three diagnostics: `OUTPUT_CYCLE` at each entry of `inputs` that lies on it
-  (`src/astra/rules/outputs.py:42-43`). How often a breach is reported is astra-tools' own
+  (`src/astra/rules/outputs.py:44-45`). How often a breach is reported is astra-tools' own
   (design §3). Design §4.13 case 13 says "The breach is reported once, as `OUTPUT_CYCLE`";
-  astra-tools reads "once" as "by no other rule" (`src/astra/rules/outputs.py:9`: "reported as
+  astra-tools reads "once" as "by no other rule" (`src/astra/rules/outputs.py:11`: "reported as
   `OUTPUT_CYCLE` alone"). That is its reading, not the design's words, which could be reworded
   to match.
 - The rule modules: one per section of Part II whose codes table states them (design §4.4),
@@ -457,15 +459,15 @@ Under the hood:
   `Context`; `commits` runs first, since its findings decide which of the others' get a related
   declaration (59-61).
 - `Context` (`src/astra/rules/context.py`) computes what `universes.py` derives once each, as
-  `cached_property`s (49-95), and holds the §4.13 predicates the rules consult before reporting
-  (99-115).
+  `cached_property`s (50-154), and holds the §4.13 predicates the rules consult before reporting
+  (156-209).
 - `inputs._inputs` (`src/astra/rules/inputs.py:43-76`) asks git once for every input's path
   (54; one `git ls-files --stage`, `src/astra/sources/git.py:91`), then per input: `_no_file`
   (62) gives `MISSING_INPUT_FILE` (64), and only otherwise `INPUT_NOT_TRACKED` (65-73).
-- Addresses are resolved once, at binding (`src/astra/stack.py:432-452`); `names.check`
-  (`src/astra/rules/names.py:22-26`) reports each that resolved to nothing, unless it went
+- Addresses are resolved once, at binding (`src/astra/stack.py:452-472`); `names.check`
+  (`src/astra/rules/names.py:26-31`) reports each that resolved to nothing, unless it went
   through an undetermined analysis.
-- `outputs._cycles` (`src/astra/rules/outputs.py:41-53`) looks, from each entry, for the
+- `outputs._cycles` (`src/astra/rules/outputs.py:43-55`) looks, from each entry, for the
   shortest path back to the output that lists it, and reports at the entry's pointer.
 
 ## 7. Errors and warnings, astra-tools' own codes, `unchecked`
@@ -505,7 +507,7 @@ What to notice:
   no diagnostic (design §4.6).
 - It is reported at the first declaration of each chain that the other doesn't go through
   (here, where each chain starts), the other's as `related`
-  (`src/astra/rules/driving.py:287-290`). Where a breach goes beyond Annex D is astra-tools'
+  (`src/astra/rules/driving.py:291-294`). Where a breach goes beyond Annex D is astra-tools'
   own (design §3).
 - astra-tools' own three codes are listed apart, with their levels (design §3, `diagnostics.py`;
   chapter 1's step 6 met them). The first two are errors because without them the stack can't
@@ -525,10 +527,10 @@ Under the hood:
 - `Catalogue.level` (`src/astra/diagnostics.py:139-141`) is where error or warning is decided;
   `Catalogue.find` (122-124) looks in `rules.json`, then in `OWN` (60-90), and a code in
   neither makes `Catalogue.rule` raise `LookupError` (126-132), an internal error.
-- `driving._two_places` (`src/astra/rules/driving.py:272-298`) makes the warning, with the
-  other declaration as related place (298).
+- `driving._two_places` (`src/astra/rules/driving.py:276-302`) makes the warning, with the
+  other declaration as related place (302).
 - `stack._follow` asks the cache's remote store for the URL and commit
-  (`src/astra/stack.py:310-314`); none means the outcome `unreachable`, and `commits.check`
+  (`src/astra/stack.py:328-332`); none means the outcome `unreachable`, and `commits.check`
   reports it (`src/astra/rules/commits.py:63-77`). The store is a bare repository per URL,
   filled by `git fetch --filter=blob:none` (`src/astra/sources/remote.py:3-5`; chapter 1's
   step 8 opens one, chapter 5 follows it in full). `Remotes.get`
@@ -595,8 +597,8 @@ What to notice:
 
 Under the hood:
 
-- `_Checker.place` (`src/astra/check.py:287-337`) reads each place's record through
-  `records.read_record` (297).
+- `_Checker.place` (`src/astra/check.py:291-341`) reads each place's record through
+  `records.read_record` (301).
 - `read_record` (`src/astra/records.py:128-148`) parses with `load_json` (139;
   `src/astra/load.py:163-172`, its hooks refusing a repeated name, 175-182, and `NaN` and
   `Infinity`, 185-186), then calls `Contract.check_record` (143).
@@ -605,8 +607,8 @@ Under the hood:
   one. A record has no node tree, so `Document.position` gives no line
   (`src/astra/load.py:80-96`).
 - Each diagnostic becomes an `INVALID_RECORD` reason carrying the code it breaks
-  (`src/astra/check.py:306-312`). `_bytes` gives `absent` with no reason where there is no
-  record (506-507). The exit code follows `CheckReport.ok` (136-142).
+  (`src/astra/check.py:310-316`). `_bytes` gives `absent` with no reason where there is no
+  record (527-528). The exit code follows `CheckReport.ok` (139-145).
 
 ## Try
 
@@ -633,8 +635,8 @@ astra.yaml
 astra.yaml: invalid, 1 error(s), 0 warning(s)
 $ python ../../judge.py astra.yaml
 parse    ok: a JSON value
-keyword  /outputs/points  https://w3id.org/astra/dev/analysis.schema.json#/$defs/Output__identifier_optional/required  MISSING_FIELD
-keyword  /outputs/points  https://w3id.org/astra/dev/analysis.schema.json#/$defs/Output__identifier_optional/required  MISSING_FIELD
+keyword  /outputs/points  https://w3id.org/astra/dev/analysis.schema.json#/$defs/Output__identifier_optional/allOf/0/then/required  MISSING_FIELD
+keyword  /outputs/points  https://w3id.org/astra/dev/analysis.schema.json#/$defs/Output__identifier_optional/allOf/0/then/required  MISSING_FIELD
 report   MISSING_FIELD at /outputs/points 11:5: `points` lacks `type`, `format`
 $ git checkout -q astra.yaml
 ```
@@ -643,6 +645,8 @@ $ git checkout -q astra.yaml
   missing field, so the two diagnostics are equal and `dict.fromkeys` keeps one
   (`src/astra/contract.py:127-128`).
 - 11:5 is the `points` map's first key, `label`, not `points:` at 10:3 (step 3).
+- The `required` sits under `allOf/0/then`: an output needs `type`, `format` and `recipe` only
+  if it isn't a switch (the `if` beside it), hence `MISSING_FIELD`'s `if` key in step 4.
 
 </details>
 
@@ -723,8 +727,9 @@ astra.yaml
   27:28 error OUTPUT_CYCLE `fit` depends on itself through `comparison`: `fit` → `comparison` → `fit`
   36:14 error OUTPUT_CYCLE `comparison` depends on itself through `fit#ols`: `comparison` → `fit` → `comparison`
   36:23 error OUTPUT_CYCLE `comparison` depends on itself through `fit#huber`: `comparison` → `fit` → `comparison`
-.astra/records/points.json at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206  points  unchanged
-astra.yaml: invalid, 3 error(s), so only the results it leaves determined; 1 place(s) of planned results, 1 unchanged, 0 stale, 0 missing; 0 absent
+astra.yaml
+  53:19 error STALE_EVIDENCE `comparison` cites no result: its output is built in none of the root's universes
+astra.yaml: invalid, 3 error(s), so only the results it leaves determined; 0 place(s) of planned results, 0 unchanged, 0 stale, 0 missing; 0 absent
 exit 1
 $ git checkout -q astra.yaml
 ```
@@ -732,9 +737,16 @@ $ git checkout -q astra.yaml
 - `check` on an invalid analysis gives the errors first, then statuses for the results whose
   planning is determined (design §4.7). `fit` and `comparison` are on the cycle, so theirs isn't
   (design §4.13 cases 12 and 13).
-- `points` belongs to noisy-line at a commit. Such a result gets a bytes status only when a
-  planned result reads it (§20 *Results of an analysis from a commit*), and none does now
-  (`src/astra/check.py:226-236`).
+- No result gets a status, not even `points`. line-fit plans from its own outputs, and
+  noisy-line's `points` only because `fit` reads it (the short specification's Results
+  *plans*); with `fit`'s planning undetermined, no planned result reads `points`.
+- The finding that cites `comparison` gets `STALE_EVIDENCE`, under an `astra.yaml` heading of
+  its own: evidence comes after the results. `_cited` keeps only results that are planned
+  (`src/astra/check.py:602-617`), and an output on a cycle has none, so astra-tools reports it
+  as built nowhere. Its own `_Checker.evidence` docstring (`:561-567`) and design §4.13 case 12
+  give no status to evidence that cites a result whose planning isn't determined, as chapter
+  6's Try 1 shows for one a switch leaves undetermined: here astra-tools departs from both. The
+  summary counts the validator's three errors only.
 - Exit 1: the analysis breaks a `MUST`.
 
 </details>
@@ -793,4 +805,4 @@ $ git checkout -q .astra/records/points.json && git status --short
   never listed.
 - A record goes through the same `load` and `contract`, by the schema its version picks, and
   whatever it breaks becomes `INVALID_RECORD`, leaving its result `missing`.
-- None of design §5's `OPEN` readings (O2, O16, O30, all about `when`) lies on these paths.
+- Design §5 has no open question left, so no `OPEN(` reading lies on these paths, or on any.

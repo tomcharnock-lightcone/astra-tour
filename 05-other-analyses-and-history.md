@@ -123,7 +123,7 @@ What to notice:
 - `validity` holds one verdict, `[]`: noisy-line at 2dcf20f, judged as its own root, breaks no `MUST`. Its file name hashes astra-tools' version too, so it differs between builds of astra-tools (which is why it isn't shown).
 
 Under the hood:
-- `bind` (`src/astra/stack.py:225`) follows each declaration through `_follow` (`stack.py:293`). A `url` declaration gets `remotes.get(url, commit)`, then a `CommitReader` on the store, at the folder `""` (`stack.py:310-315`).
+- `bind` (`src/astra/stack.py:242`) follows each declaration through `_follow` (`stack.py:311`). A `url` declaration gets `remotes.get(url, commit)`, then a `CommitReader` on the store, at the folder `""` (`stack.py:328-333`).
 - `Remotes.get` (`src/astra/sources/remote.py:34`): a store that has the commit counts as got, and otherwise, unless offline, it fetches (`remote.py:47`). Each URL and commit is asked for once per run (`remote.py:45-48`). `None` makes the outcome `unreachable`, astra-tools' `REMOTE_UNREACHABLE`.
 - `_store` (`remote.py:58`) names the folder by the URL's hash (`remote.py:62`) and makes it in a temporary folder with `Repository.init_bare` (`src/astra/sources/git.py:61`), which sets only `remote.origin.url` (`git.py:65`). It then renames it into place (`remote.py:68`), so two processes never make one store together.
 - `Repository.fetch` (`git.py:150`) runs `git fetch --quiet --no-tags --no-write-fetch-head --filter=blob:none origin <commit>:refs/astra/<commit>` (`git.py:154-157`) and then asks `has_commit` (`git.py:158`). `_git` captures git's stderr (`git.py:35-42`), and `fetch` looks at nothing but `has_commit` afterwards, so git's warning goes nowhere. `GIT_TERMINAL_PROMPT=0` stops git from waiting for a password (`git.py:30`).
@@ -177,7 +177,7 @@ What to notice:
 Under the hood:
 - A `CommitReader` makes `Objects(repo, lazy=not remotes.offline)` (`reader.py:187`). Lazy, git's environment leaves `GIT_NO_LAZY_FETCH` out (`git.py:25-32`), so `cat-file --batch` fetches a missing blob from the promisor remote when it is asked for. With `--offline` the blob reads as missing, and the reader says it "isn't kept in the cache: validate without --offline to fetch it" (`reader.py:267-275`).
 - The input rules stat before they read: `_no_file` returns at once for a file (`src/astra/rules/inputs.py:84-86`), and tracked at a commit means present in the commit's tree (`reader.py:208-214`). Neither needs the blob.
-- For `STALE_RESULT`, the checker binds the stack at the commit the record names, 3732bd7, from the same store (`_bind`, `src/astra/check.py:373`), and compares the input's content now through `_content` (`check.py:488`). The bytes status hashes `points.csv` as read from git (`_bytes`, `check.py:500`, then `hashing.digest`, `src/astra/hashing.py:66-74`).
+- For `STALE_RESULT`, the checker binds the stack at the commit the record names, 3732bd7, from the same store (`_bind`, `src/astra/check.py:377`), and compares the input's content now through `_content` (`check.py:509`). The bytes status hashes `points.csv` as read from git (`_bytes`, `check.py:521`, then `hashing.digest`, `src/astra/hashing.py:66-74`).
 - `astra cache clear` (`cache.py:82`) moves each of astra-tools' namespaces aside and deletes it. Anything else in the folder stays.
 
 ## 4. info and plan across the two repositories
@@ -237,10 +237,10 @@ What to notice:
 - In the JSON, `owner` is an identity, a folder and a commit, with no URL: a URL says only where to get the commit ([§17 *Identity*](https://astra-spec.org/0.1/specification/#identity)). `read_only` is true for `points`. Each input read at a commit carries that commit, and `result` is the index of the planned result it reads.
 
 Under the hood:
-- `info` heads each member with `file_named` (`src/astra/cli/text/info.py:16`, `src/astra/cli/text/__init__.py:23-29`), from the `Location` that `Stack.location` builds with the member's commit and URL (`src/astra/stack.py:196-202`), and prints each declaration's row through `_reached` (`info.py:42`), which names the member it reached the same way. It checks nothing: it exits 1 only where there is no stack to show (the root's file isn't a valid document, or the root is in no repository), so an unreachable declaration still exits 0, shown as "nothing (unreachable)".
-- `Identity` (`stack.py:47-58`) is a folder and a commit, `None` for the working tree.
-- `read_only = result.owner.commit != stack.root.commit` (`src/astra/plan.py:310`); the text plan prints "read through its record" for it (`src/astra/cli/text/plan.py:30`).
-- `render_command` writes `<commit>:<path>` for an entry read at a commit that its `got` doesn't give (`plan.py:590`).
+- `info` heads each member with `file_named` (`src/astra/cli/text/info.py:16`, `src/astra/cli/text/__init__.py:23-29`), from the `Location` that `Stack.location` builds with the member's commit and URL (`src/astra/stack.py:213-219`), and prints each declaration's row through `_reached` (`info.py:42`), which names the member it reached the same way. It checks nothing: it exits 1 only where there is no stack to show (the root's file isn't a valid document, or the root is in no repository), so an unreachable declaration still exits 0, shown as "nothing (unreachable)".
+- `Identity` (`stack.py:48-59`) is a folder and a commit, `None` for the working tree.
+- `read_only = result.owner.commit != stack.root.commit` (`src/astra/plan.py:417`); the text plan prints "read through its record" for it (`src/astra/cli/text/plan.py:30`).
+- `render_command` writes `<commit>:<path>` for an entry read at a commit that its `got` doesn't give (`plan.py:743`).
 
 ## 5. Three forms of declaration, three ways of reading
 
@@ -302,9 +302,9 @@ What to notice:
 - The analysis stays valid, and its plan is the same: nothing reads `here` or `before`. `COMMIT_NOT_ANCESTOR`, astra-tools' own warning (design §3), holds, since aca519e is an ancestor of HEAD.
 
 Under the hood:
-- `_follow` (`stack.py:293`), by `path` alone: the declaring analysis's own reader, here the `WorktreeReader` (`stack.py:329-331`). `bind` reads a place only if its identity isn't a member yet (`stack.py:263`).
+- `_follow` (`stack.py:311`), by `path` alone: the declaring analysis's own reader, here the `WorktreeReader` (`stack.py:347-349`). `bind` reads a place only if its identity isn't a member yet (`stack.py:280`).
 - `WorktreeReader` (`src/astra/sources/reader.py:77`) reads files from disk. Its `tracked` asks the index (`Repository.tracked`, `git ls-files --stage`, `git.py:83-99`), where a `CommitReader` looks the path up in the commit's tree (`reader.py:208-214`). Its `holding` (`reader.py:105-111`) is the innermost checked-out submodule on the way to the folder, or the root's repository.
-- By `path` and `commit`: the repository that holds the declaring file (`Reader.holding`, `stack.py:318`). Where that repository lacks the commit, the outcome is `absent`, which is `COMMIT_NOT_FOUND` (`stack.py:320-322`). With it, a `CommitReader` with no URL (`stack.py:323`). In a file read from a remote, the same commit is got from that remote instead (`stack.py:324-328`).
+- By `path` and `commit`: the repository that holds the declaring file (`Reader.holding`, `stack.py:336`). Where that repository lacks the commit, the outcome is `absent`, which is `COMMIT_NOT_FOUND` (`stack.py:338-340`). With it, a `CommitReader` with no URL (`stack.py:341`). In a file read from a remote, the same commit is got from that remote instead (`stack.py:342-346`).
 - noisy-line at 2c5197a: `Remotes.get` finds the commit in the store (`remote.py:47`), so nothing is fetched and no ref is added.
 - `COMMIT_NOT_ANCESTOR` (`src/astra/rules/commits.py:82-98`) is judged only for a declaration with a `path` and a `commit`, against the commit the declaration is in or, in the working tree, HEAD. A `url` declaration's commit is never compared with anything.
 - `hashes` belongs to `hashing.digest_file` (`src/astra/hashing.py:43`), which chapter 4's step 10 takes apart: keyed by device and inode, holding the size, the modification time and the hash, so an unchanged file costs a `stat`. A file modified less than two seconds before it is hashed isn't kept (`hashing.py:60`).
@@ -352,14 +352,14 @@ What to notice:
 - With a Git LFS pointer that gives `config.json`'s real hash and size in its place, `points` stays `unchanged`. `STALE_RESULT` compares the content, never what stands in for it, and the pointer gives the content's hash ([§20 *The rules*](https://astra-spec.org/0.1/specification/#20-checking-results)).
 - Change the pointer's size to 102 and `points` is `stale`. astra-tools takes the pointer's word for the content: its oid and size are the digest compared, both at once (`hashing.Digest`, `hashing.py:30`), and nothing is fetched to check them. Size 102 names other content, so the content counts as changed, though the data didn't.
 - With a DVC file beside the path and `config.json` gone, the analysis is valid: `MISSING_INPUT_FILE` accepts the stand-in, and `INPUT_NOT_TRACKED` the tracked `config.json.dvc`. The "DVC file" is only `config.json` renamed: astra-tools recognises one by its name alone (`standins.py:130-132`).
-- The checker asks only stand-ins kept at the path itself, so it never asks DVC. `config.json` is gone, so there is nothing to hash, and the result is `stale`, never `unchanged`, as §20 requires where an input's content can't be read or sits behind a stand-in that gives no hash ([§20 *When a result is unchanged*](https://astra-spec.org/0.1/specification/#when-a-result-is-unchanged)). The same holds for any stand-in kept beside the path, built-in or registered: the checker never asks it for a hash, whatever its `gives` returns, so with no file at the path its result can only be stale. That is astra-tools' choice (the `_content` docstring, `check.py:489-491`).
+- The checker asks only stand-ins kept at the path itself, so it never asks DVC. `config.json` is gone, so there is nothing to hash, and the result is `stale`, never `unchanged`, as §20 requires where an input's content can't be read or sits behind a stand-in that gives no hash ([§20 *When a result is unchanged*](https://astra-spec.org/0.1/specification/#when-a-result-is-unchanged)). The same holds for any stand-in kept beside the path, built-in or registered: the checker never asks it for a hash, whatever its `gives` returns, so with no file at the path its result can only be stale. That is astra-tools' choice (the `_content` docstring, `check.py:510-513`).
 - astra-tools runs neither git-lfs nor dvc, and fetches nothing a stand-in stands for.
 
 Under the hood:
 - The `StandIn` protocol (`src/astra/sources/standins.py:32-51`): `place(path)` is what git tracks for the file, `recognises` says whether it is there, and `gives` returns the content's hash and size. Git LFS and git-annex keep it at the path itself (`standins.py:66-67`, `standins.py:96-97`), DVC beside it (`standins.py:127-128`), and DVC's `gives` is `None` (`standins.py:134-135`). Design §4.5's table says DVC gives the size; the code gives nothing, since `gives` returns a hash and a size together or `None` (`standins.py:48-51`; chapter 4's step 9 noted it too). git-annex, not tried here, is a symlink into `annex/objects/`, never followed, or an unlocked pointer naming one; a key of the `SHA256` or `SHA256E` backend gives the hash and size (`standins.py:102-106`).
 - `registered()` (`standins.py:142-146`) gives the three built-ins, then each object registered in the entry-point group `astra.standins` (`standins.py:28`). Nothing is registered here.
 - The validator asks git about every stand-in place at once (`src/astra/rules/inputs.py:48-54`), accepts a recognised stand-in where no file is (`inputs.py:94`), and a tracked stand-in for tracking (`inputs.py:65-68`).
-- The checker's `_content` (`src/astra/check.py:488-498`) consults only stand-ins kept at the path itself (`check.py:495`). A DVC file beside the path is never consulted, the path holds no file, and `STALE_RESULT` says the content "can't be read" (`check.py:468`).
+- The checker's `_content` (`src/astra/check.py:509-519`) consults only stand-ins kept at the path itself (`check.py:516`). A DVC file beside the path is never consulted, the path holds no file, and `STALE_RESULT` says the content "can't be read" (`check.py:489`).
 
 ## 7. History: a record's versions
 
@@ -426,7 +426,7 @@ What to notice:
 - `PATH` comes after `ADDR`. The address is resolved against today's plan, from the working tree's `astra.yaml`; the versions come only from commits, never from the working tree.
 
 Under the hood:
-- `api.history` (`src/astra/api.py:141-149`) needs a valid stack (`_valid`, `api.py:172-182`): on one that breaks a `MUST`, every history command prints `validate`'s report and exits 1. `History.__init__` plans the stack once (`src/astra/history.py:96`).
+- `api.history` (`src/astra/api.py:142-150`) needs a valid stack (`_valid`, `api.py:173-183`): on one that breaks a `MUST`, every history command prints `validate`'s report and exits 1. `History.__init__` plans the stack once (`src/astra/history.py:96`).
 - `_versions` (`history.py:186-206`): for a read-only result, its record through its analysis's own reader, as one version at the declared commit (`history.py:193-197`). Otherwise `Repository.log` (`src/astra/sources/git.py:129-140`), which runs `git log --format=%H HEAD -- :(literal)<path>` (`git.py:136`), and a `CommitReader` per commit, each record read as the checker reads one (`history.py:200-204`).
 - Nothing is indexed or kept in the cache: `_kept` lives only as long as the `History` object.
 - History prints text only, as `info` and `universe` do (design §4.12).
@@ -581,9 +581,9 @@ $ git checkout -q astra.yaml
 ```
 
 - Valid: 18cfe9d is in the store already, an ancestor of 2dcf20f, and nothing compares a `url` declaration's commit with anything (`COMMIT_NOT_ANCESTOR` is only for `path` and `commit`).
-- At 18cfe9d, `points` is unchanged: its record there was made at 2288818, and nothing it depends on changed between the two. The fits are stale because their records list the hash of the points at 2dcf20f: "made again since, with other bytes than it read" (`check.py:485`). The wording assumes a newer build, though the declaration moved back to an older one: astra-tools compares only the two digests, so an older build gives the same message. The check rules on a read-only result are §20's *Results of an analysis from a commit*.
+- At 18cfe9d, `points` is unchanged: its record there was made at 2288818, and nothing it depends on changed between the two. The fits are stale because their records list the hash of the points at 2dcf20f: "made again since, with other bytes than it read" (`check.py:506`). The wording assumes a newer build, though the declaration moved back to an older one: astra-tools compares only the two digests, so an older build gives the same message. The check rules on a read-only result are §20's *Results of an analysis from a commit*.
 - `lineage` resolves `points` against today's plan, where its one version is now at 18cfe9d, with another hash. So no version gives what the fit's record lists.
-- At 2288818, `points`'s record is step 1's, made at c94c7b0 from 30 points, while `config.json` at 2288818 asks for 60: `points` itself is stale, and the fits read a stale result (`check.py:482`). A runner would refuse to build from it (`STALE_INPUT`).
+- At 2288818, `points`'s record is step 1's, made at c94c7b0 from 30 points, while `config.json` at 2288818 asks for 60: `points` itself is stale, and the fits read a stale result (`check.py:503`). A runner would refuse to build from it (`STALE_INPUT`).
 
 </details>
 
@@ -682,7 +682,7 @@ validator, MUST, astra-tools
 Every commit the stack gets from a remote (§17) can be got
 ```
 
-- `COMMIT_NOT_FOUND`, the specification's code: a `path` and `commit` in a file not read from a remote is read only from the repository that holds the declaring file (`stack.py:320-322`), never from a store. It is reported at the `commit` value (`4:29`), and `COMMIT_NOT_ANCESTOR` isn't checked on it (design §4.13 case 3, `commits.py:52-59`).
+- `COMMIT_NOT_FOUND`, the specification's code: a `path` and `commit` in a file not read from a remote is read only from the repository that holds the declaring file (`stack.py:338-340`), never from a store. It is reported at the `commit` value (`4:29`), and `COMMIT_NOT_ANCESTOR` isn't checked on it (design §4.13 case 3, `commits.py:52-59`).
 - Offline with an empty cache, `REMOTE_UNREACHABLE`, astra-tools' own error (design §3), at the declaration (`5:5`, the `noisy` map), as in chapter 1's Try 4. `--offline` exists only on `validate`; `check`, `plan`, `info` and `history` always may fetch.
 - The last `validate` fetches again, and the cache is back to one store with one blob.
 - `astra rules` says whose each code is: the specification's, by its layer and level alone, or astra-tools' own, marked "astra-tools", from its table `OWN` beside `rules.json`'s (`src/astra/diagnostics.py:60`).

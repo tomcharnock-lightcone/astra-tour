@@ -82,31 +82,31 @@ What to notice
 
 Under the hood
 - `astra check` calls `api.check` (`src/astra/cli/check.py:37`), which validates the stack
-  first (`src/astra/api.py:133`, `_read` → `validate.validated`) and passes the bound stack to
-  `check.check` (`src/astra/api.py:138`).
-- `check.check` takes its results from `plan(stack).results` (`src/astra/check.py:206`), the
+  first (`src/astra/api.py:134`, `_read` → `validate.validated`) and passes the bound stack to
+  `check.check` (`src/astra/api.py:139`).
+- `check.check` takes its results from `plan(stack).results` (`src/astra/check.py:209`), the
   planner `astra plan` uses, so it reads no record the plan doesn't place
   ([§20](https://astra-spec.org/0.1/specification/#20-checking-results): "reads records only
   through planned results").
-- `_Checker.place` (`src/astra/check.py:287`) calls `read_record`, which gives None where no
+- `_Checker.place` (`src/astra/check.py:291`) calls `read_record`, which gives None where no
   file is at the place (`src/astra/records.py:134-136`): `MISSING_RECORD`
-  (`src/astra/check.py:301-305`). The check layer reports §20's seven codes and no other
-  (`src/astra/check.py:57-67`); astra-tools' three own codes are all in the validator layer
+  (`src/astra/check.py:305-309`). The check layer reports §20's seven codes and no other
+  (`src/astra/check.py:60-70`); astra-tools' three own codes are all in the validator layer
   (`src/astra/diagnostics.py:60-90`).
 - With no valid record there are no recorded bytes: `_bytes` returns `absent` and no reason
-  (`src/astra/check.py:506-507`), as chapter 2's step 8 found for an invalid record. That is
+  (`src/astra/check.py:527-528`), as chapter 2's step 8 found for an invalid record. That is
   design §4.13 case 9, astra-tools' policy on when a rule isn't checked: no `STALE_RESULT` or
   `ABSENT_RESULT` for a `missing` result.
-- The exit code is `CheckReport.ok` (`src/astra/check.py:136-142`): no validation error, and
+- The exit code is `CheckReport.ok` (`src/astra/check.py:139-145`): no validation error, and
   every place and evidence `unchanged`; bytes don't count. The codes are astra-tools' own
   (design §4.12; chapter 1, step 3): 1 is `FAILED` and 2 `USAGE`
   (`src/astra/cli/__init__.py:50-51`); an `--at` that names no commit is a usage error
   (`src/astra/cli/check.py:38-39`).
 - The plan's `command` line is `render_command(result, folder)`
-  (`src/astra/cli/text/plan.py:41`, `src/astra/plan.py:558`): placeholders filled verbatim, no
-  shell quoting, paths relative to the folder the recipe runs in. An inactive decision's
-  `{decisions.<entry>}` would give the empty string, the reading of `OPEN(O30)` in design §5
-  (`src/astra/plan.py:605`).
+  (`src/astra/cli/text/plan.py:39`, `src/astra/plan.py:711`): placeholders filled verbatim, no
+  shell quoting, paths relative to the folder the recipe runs in. `{decisions.<entry>}` is the
+  option the universe selects: each decision a planned result lists is set where it is built,
+  or the file breaks `MISSING_DECISION` and has no plan.
 
 ## 2. Run one recipe by hand
 
@@ -215,7 +215,7 @@ What to notice
   committed in a later commit").
 
 Under the hood
-- `api.plan()` (`src/astra/api.py:94`) gives `Result`s (`src/astra/plan.py:69`): names, places
+- `api.plan()` (`src/astra/api.py:94`) gives `Result`s (`src/astra/plan.py:77`): names, places
   (`name`, `address`, `record`, `bytes`), one `Read` per entry of `inputs`, the options its
   decisions select, the command template, the folder it runs in, and whether it is read
   through a record (`read_only`) or run at a commit (`run_at`).
@@ -228,12 +228,12 @@ Under the hood
 - `write_record` (`src/astra/records.py:151`) writes sorted keys, two-space indentation and a
   final newline to a temporary file in the same folder, then `os.replace`s it into place
   (`src/astra/records.py:155-162`).
-- `not committed` is `_committed` (`src/astra/check.py:517-535`): the record's bytes against
+- `not committed` is `_committed` (`src/astra/check.py:538-556`): the record's bytes against
   HEAD's blob at the same path. It is astra-tools' addition (design §4.7), not a §20 status,
   and the text shows it only for a record that is the result's
   (`src/astra/cli/text/check.py:44-45`).
-- `unchanged`: `_then` bound the stack as it is at `1b7d5fe` (`src/astra/check.py:347-393`),
-  and `_changes` found nothing different in the working tree (`src/astra/check.py:419-486`).
+- `unchanged`: `_then` bound the stack as it is at `1b7d5fe` (`src/astra/check.py:351-397`),
+  and `_changes` found nothing different in the working tree (`src/astra/check.py:423-507`).
   Step 8 lists what it compares.
 - Only `api.plan` comes from `astra.api`. Its `__all__` (`src/astra/api.py:33-53`) holds
   `validate`, `bind`, `init`, `plan`, `view`, `check`, `history`, `papers`, `quotes` and their
@@ -465,11 +465,11 @@ What to notice
   under `INVALID_RECORD`.
 
 Under the hood
-- `CheckReport.to_json` (`src/astra/check.py:144-184`), `SHAPE` (`src/astra/check.py:55`),
+- `CheckReport.to_json` (`src/astra/check.py:147-187`), `SHAPE` (`src/astra/check.py:58`),
   printed with `json.dumps(…, indent=2)` (`src/astra/cli/__init__.py:129-131`). Tests pin the
   shape until astra-spec's conformance suite gives it a JSON Schema (design §4.11).
 - `api.check(path, at=, universes=, outputs=)` narrows the results to universes and outputs
-  (`src/astra/check.py:207-221`); the CLI doesn't offer that.
+  (`src/astra/check.py:210-224`); the CLI doesn't offer that.
 
 ## 7. An uncommitted change to an input
 
@@ -509,15 +509,15 @@ What to notice
 - run.py refuses: `data/poem.txt` is neither a record's place nor a default place.
 
 Under the hood
-- For an input, `_changes` asks `_content` (`src/astra/check.py:464-475`, `488-498`): what a
+- For an input, `_changes` asks `_content` (`src/astra/check.py:485-496`, `509-519`): what a
   stand-in at the path gives (step 9), else `hashing.digest` of the file in the working tree;
   hash and size are compared with the record's item.
 - For a result it reads, `_changes` takes the status already worked out for it (the plan puts
   it first): not `unchanged` gives "is stale" or "has no valid record"
-  (`src/astra/check.py:476-483`).
+  (`src/astra/check.py:497-504`).
 - `--at REV`: `api._read` resolves REV with `git rev-parse --verify REV^{commit}`
-  (`src/astra/api.py:193`, `src/astra/sources/git.py:118-124`) and reads everything through a
-  `CommitReader` (`src/astra/api.py:196`): one long-lived `git cat-file --batch`, nothing
+  (`src/astra/api.py:194`, `src/astra/sources/git.py:118-124`) and reads everything through a
+  `CommitReader` (`src/astra/api.py:197`): one long-lived `git cat-file --batch`, nothing
   checked out (`src/astra/sources/reader.py:170`). Bytes read at a commit are hashed as read,
   and not cached (`src/astra/hashing.py:74`).
 
@@ -593,20 +593,22 @@ What to notice
   gives another.
 - run.py builds only `summary`. `count#words`'s uncommitted record and bytes don't stop it.
 
-Under the hood: what `STALE_RESULT` compares, in `_changes` (`src/astra/check.py:419-486`),
+Under the hood: what `STALE_RESULT` compares, in `_changes` (`src/astra/check.py:423-507`),
 against the stack bound at the record's commit, and nothing else:
-- the command as declared (`434`), the inputs in their order (`436`), the decisions as a set
-  (`441`), the format (`446`);
-- the option each decision selects in the result's universe (`448-455`);
-- each input's content (`464-475`);
-- each result it reads: its status (`481-483`), then its record's hash and size against the
-  item recorded (`484-485`). The bytes of a result it reads never enter;
+- the command as declared (`441`), the inputs in their order (`443`), the decisions as a set
+  (`448`), the format (`453`);
+- the option each decision selects in the result's universe (`455-462`);
+- for each switch an entry reads through, its decision, the option selected where it is read
+  and the case it takes (`_switched`, `482-484`; none here: chapter 6's Try 1 has one);
+- each input's content (`485-496`);
+- each result it reads: its status (`502-504`), then its record's hash and size against the
+  item recorded (`505-506`). The bytes of a result it reads never enter;
 - and, first, whether the record's commit and its output are there at all
-  (`src/astra/check.py:321-324`, `362-366`, `376-393`): stale if not (step 11).
+  (`src/astra/check.py:325-328`, `366-370`, `380-397`): stale if not (step 11).
 
-The bytes are judged apart, by `_bytes` (`src/astra/check.py:500-515`): the hash and size at
+The bytes are judged apart, by `_bytes` (`src/astra/check.py:521-536`): the hash and size at
 the default place against the record's, `present` if equal, else `absent` with
-`ABSENT_RESULT`, "no file" (`512`) or "aren't the ones its record gives" (`514`).
+`ABSENT_RESULT`, "no file" (`533`) or "aren't the ones its record gives" (`535`).
 
 ## 9. A stand-in in the input's place (optional)
 
@@ -641,7 +643,7 @@ What to notice
 Under the hood
 - `_content` tries each registered stand-in whose place is the path itself and which
   recognises what is there, and takes the hash and size it gives
-  (`src/astra/check.py:494-497`); `GitLfs.gives` parses the pointer
+  (`src/astra/check.py:515-518`); `GitLfs.gives` parses the pointer
   (`src/astra/sources/standins.py:72-86`). A git-annex link gives them for its `SHA256` and
   `SHA256E` backends (`src/astra/sources/standins.py:102-106`). A DVC file sits beside the
   path, so `_content` passes it by and hashes the file at the path, if there is one.
@@ -650,7 +652,7 @@ Under the hood
   packages add stand-ins through the entry-point group `astra.standins`
   (`src/astra/sources/standins.py:142-146`).
 - A result's bytes get no such reading: `_bytes` hashes whatever is at the default place
-  (`src/astra/check.py:508`), so a stand-in there is `absent` (§18).
+  (`src/astra/check.py:529`), so a stand-in there is `absent` (§18).
 - `new_record` doesn't look for stand-ins either (`src/astra/records.py:198`). A runner that
   runs a recipe with the pointer in place records the pointer's hash, and the check calls the
   result stale as soon as it is built: the record is true, and the recipe didn't read the
@@ -776,16 +778,16 @@ What to notice
   can't be compared (§20). `not committed` shows again, for a record that is the result's.
 
 Under the hood
-- In `_Checker.place` (`src/astra/check.py:287-337`): `INVALID_RECORD` carries each parse or
-  schema code as `breaks` (`306-312`); `MISPLACED_RECORD` (`314-319`); `_inputs`
-  (`src/astra/check.py:395-417`) matches items to entries by `entry`, in any order, on every
-  valid record whose commit can be read, misplaced or not (`326`); `_changes` runs only where
-  no reason was found (`327-330`).
-- `_bind` asks `git cat-file -t <commit>` (`src/astra/check.py:376`,
+- In `_Checker.place` (`src/astra/check.py:291-341`): `INVALID_RECORD` carries each parse or
+  schema code as `breaks` (`310-316`); `MISPLACED_RECORD` (`318-323`); `_inputs`
+  (`src/astra/check.py:399-421`) matches items to entries by `entry`, in any order, on every
+  valid record whose commit can be read, misplaced or not (`330`); `_changes` runs only where
+  no reason was found (`331-334`).
+- `_bind` asks `git cat-file -t <commit>` (`src/astra/check.py:380`,
   `src/astra/sources/git.py:101-104`) and gives a message in place of a stack
-  (`src/astra/check.py:377-382`), which `place` turns into `STALE_RESULT` (`321-324`). The
+  (`src/astra/check.py:381-386`), which `place` turns into `STALE_RESULT` (`325-328`). The
   stacks bound at records' commits are kept for the check, by repository, commit and folder
-  (`src/astra/check.py:355-357`).
+  (`src/astra/check.py:359-361`).
 
 ## Try
 
@@ -918,7 +920,7 @@ exit 1
 $ git reset --quiet --hard built && git clean -dfq
 ```
 
-- (a) Unchanged: the comparison is of the string as parsed (`src/astra/check.py:434`), and the
+- (a) Unchanged: the comparison is of the string as parsed (`src/astra/check.py:441`), and the
   quotes aren't in it.
 - (b) Stale: the rendered command lines are the same, but `STALE_RESULT` compares the command
   as declared, the template. Each count names its own record's commit: `ece610c` for words,

@@ -40,7 +40,6 @@ decisions:
         excluded: The readings are continuous, so a mode would need them binned first.
   cut:
     label: How much the trimmed mean cuts from each end
-    when: [centre.trimmed]
     options:
       p10: {}
       p25: {}
@@ -54,14 +53,26 @@ outputs:
     decisions: [spikes]
     recipe:
       command: python3 src/clean.py --spikes={decisions.spikes} {inputs.readings} {output}
-  summary:
-    label: Central value
+  plain:
+    label: Mean or median
     type: metric
     format: json
     inputs: [clean]
-    decisions: [centre, cut]
+    decisions: [centre]
     recipe:
-      command: python3 src/summarise.py --centre={decisions.centre} --cut={decisions.cut} {inputs.clean} {output}
+      command: python3 src/summarise.py --centre={decisions.centre} {inputs.clean} {output}
+  trimmed_mean:
+    label: Trimmed mean
+    type: metric
+    format: json
+    inputs: [clean]
+    decisions: [cut]
+    recipe:
+      command: python3 src/summarise.py --centre=trimmed --cut={decisions.cut} {inputs.clean} {output}
+  summary:
+    label: Central value
+    switch: centre
+    cases: {mean: plain, median: plain, trimmed: trimmed_mean}
   comparison:
     label: The three central values side by side
     type: table
@@ -130,7 +141,7 @@ with open(args.out, "w") as file:
 EOF
 
 cat > src/summarise.py <<'EOF'
-"""The central value: summarise.py --centre=mean|median|trimmed --cut=[p10|p25] CLEAN OUT"""
+"""The central value: summarise.py --centre=mean|median|trimmed [--cut=p10|p25] CLEAN OUT"""
 
 import argparse
 import json
@@ -138,10 +149,14 @@ import statistics
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--centre", choices=["mean", "median", "trimmed"], required=True)
-parser.add_argument("--cut", choices=["", "p10", "p25"], default="")
+parser.add_argument("--cut", choices=["p10", "p25"])
 parser.add_argument("clean")
 parser.add_argument("out")
 args = parser.parse_args()
+if args.centre == "trimmed" and args.cut is None:
+    parser.error("--centre=trimmed needs --cut")
+if args.centre != "trimmed" and args.cut is not None:
+    parser.error("--cut goes only with --centre=trimmed")
 
 with open(args.clean) as file:
     values = sorted(float(line) for line in file.read().split()[1:])
@@ -152,7 +167,7 @@ elif args.centre == "median":
 else:
     k = len(values) * {"p10": 10, "p25": 25}[args.cut] // 100
     value = statistics.fmean(values[k : len(values) - k])
-summary = {"centre": args.centre, "cut": args.cut or None, "n": len(values), "value": value}
+summary = {"centre": args.centre, "cut": args.cut, "n": len(values), "value": value}
 with open(args.out, "w") as file:
     file.write(json.dumps(summary) + "\n")
 EOF

@@ -42,10 +42,10 @@ $ cd work/06/build/line-fit
 - `ASTRA_TOOLS` is the astra-tools checkout whose `src/astra` the `python` on PATH imports
   (`repos/astra-tools`, which `bootstrap.sh` made): the folder that holds `src/astra/api.py`.
   Steps 7, 9 and 10 grep it and run its tests, read only.
-- The whole chapter assumes that checkout at `ecbe950` (the head of its `v0.1-rebuild`), its
+- The whole chapter assumes that checkout at `30839ed` (the head of its `v0.1-rebuild`), its
   venv built with astra-spec installed from `../astra-spec-pinned` at the commit in its
-  `astra-spec.pin` (`7de4f21`, the short specification), as its CLAUDE.md's *Development* says
-  and `bootstrap.sh` does.
+  `astra-spec.pin` (`31a1a8b`, the short specification with switches), as its CLAUDE.md's
+  *Development* says and `bootstrap.sh` does.
 - The ids hold only where `python3 --version` prints 3.14 after `source env.sh`: run.py's
   records name the `python3` on PATH (`urn:astra-examples:cpython-3.14`). On another version,
   every id from noisy-line's `Build the points` on differs (the setup warns), and so do the
@@ -102,15 +102,15 @@ What to notice:
 
 Under the hood:
 
-- `_root` (`src/astra/api.py:244`) turns the folder into a reader and a root: one
+- `_root` (`src/astra/api.py:245`) turns the folder into a reader and a root: one
   `Repository.discover` (`git rev-parse --show-toplevel`), then a `WorktreeReader` on the
   repository's top, with the folder as a path from there. A folder with no `astra.yaml` file, or
-  a symlink in its place, is `NoAnalysisError` (`src/astra/api.py:260`).
-- `_read` (`src/astra/api.py:185`) puts a `CommitReader` in place of the working tree for `at=`,
-  then calls `validate.validated` (`src/astra/api.py:200`), which gives the report and the stack
+  a symlink in its place, is `NoAnalysisError` (`src/astra/api.py:261`).
+- `_read` (`src/astra/api.py:186`) puts a `CommitReader` in place of the working tree for `at=`,
+  then calls `validate.validated` (`src/astra/api.py:201`), which gives the report and the stack
   together. So every function but `bind` and `init` validates the whole stack first. `plan`,
   `view` and `history` go through `_valid`, which raises `InvalidAnalysisError` on an invalid
-  report (`src/astra/api.py:180`).
+  report (`src/astra/api.py:181`).
 - The types print as strings: `api.py`, like every module but two docstring-only
   `__init__.py`, has `from __future__ import annotations`.
 - `astra guide` reads `files("astra") / "docs" / "llms.txt"` (`src/astra/cli/guide.py:16`).
@@ -172,16 +172,16 @@ Under the hood:
   (`:81`), `bind` reads every file and follows every declaration (`:82`), and `rules.check` runs
   the rule modules on a `Context` of the stack (`:94`). Duplicates go through `dict.fromkeys`
   (`:97`), then the diagnostics are sorted, the working tree's files first (`:98`).
-- `bind` (`src/astra/stack.py:225`) reads each analysis once by its identity. A remote commit
+- `bind` (`src/astra/stack.py:242`) reads each analysis once by its identity. A remote commit
   comes from the cache's `remotes`: one bare repository per URL, fetched with
   `--filter=blob:none` and kept by a ref (`src/astra/sources/remote.py`, design §4.3; chapter 5
   follows it). On a fresh cache, the first call of this session is the one that fetches
   noisy-line.
-- `Identity` is at `src/astra/stack.py:48`, `Member` at `:92`, `Resolution` at `:150`, `Stack`
-  at `:170`, each a frozen dataclass. Rules, plan, view and check never re-resolve what a file
-  writes: they read `element`. `Stack.element` (`src/astra/stack.py:184`) resolves an address
+- `Identity` is at `src/astra/stack.py:49`, `Member` at `:93`, `Resolution` at `:156`, `Stack`
+  at `:185`, each a frozen dataclass. Rules, plan, view and check never re-resolve what a file
+  writes: they read `element`. `Stack.element` (`src/astra/stack.py:201`) resolves an address
   afterwards in two places only: one a caller asks for (`plan.root_output`, for `outputs=`,
-  `src/astra/plan.py:252`), and a place's name at a record's commit (`src/astra/check.py:361`).
+  `src/astra/plan.py:350`), and a place's name at a record's commit (`src/astra/check.py:365`).
 
 ## 3. plan: the planned results and their commands
 
@@ -232,21 +232,22 @@ What to notice:
   its bytes. Paths are relative to `cwd`, the folder the recipe runs in, or absolute.
 - `universes=["huber"]` keeps what is built in `huber` and what it reads: `comparison`, built
   once, goes. `outputs=["comparison"]` asks for an output and pulls in what it reads.
-- `notes` is empty here. The notes (`fallback_pin`, `two_names`, `unplanned`,
+- `notes` is empty here. The notes (`fallback_pin`, `two_names`, `unplanned`, `not_built`,
   `same_computation`, `outside_folder`) are astra-tools' own (design §4.6): no code, never an
   error, never an exit code.
 
 Under the hood:
 
-- `plan.plan` (`src/astra/plan.py:162`) gets the planned results from `universes.building`
-  (`:183`); `visit` (`:205`) then makes each one after what it reads, depth first, and leaves out
-  any whose planning isn't determined, which happens only on an invalid stack, for `check`.
-- `Result` (`:69`) and `Read` (`:57`) are frozen dataclasses: the API hands out objects, and only
-  `to_json` makes dicts.
-- `render_command` (`:558`): `{output}` is the first name's default place (`:599`), the
-  `<commit>:<path>` form is at `:590`, and `{decisions.<entry>}` at `:605`, where `None` becomes
-  `""`: design §5's `OPEN(O30)` (step 9).
-- An unknown universe is a `RequestError` from `root_universe` (`:233`).
+- `plan.plan` (`src/astra/plan.py:186`) gets the planned results from `universes.building`
+  (`:209`), given what the root reaches from its own outputs (`_run`, `:208`); `visit` (`:230`)
+  then makes each one after what it reads, depth first, and leaves out any whose planning isn't
+  determined, which happens only on an invalid stack, for `check`.
+- `Result` (`:77`) and `Read` (`:62`) are frozen dataclasses: the API hands out objects, and
+  only `to_json` makes dicts.
+- `render_command` (`:711`): `{output}` is the first name's default place (`:752`), the
+  `<commit>:<path>` form is at `:743`, and `{decisions.<entry>}` at `:758`: the option selected,
+  which a valid stack always has for a decision a planned result lists (`MISSING_DECISION`).
+- An unknown universe is a `RequestError` from `root_universe` (`:331`).
 
 ## 4. view: one universe
 
@@ -259,33 +260,38 @@ The stack as it is in one universe, the bundle a UI asks for.
 ...     for id_, decision in analysis.decisions.items():
 ...         print("  decision", id_, decision)
 ...     for id_, output in analysis.outputs.items():
-...         print("  output", id_, output.active, [place.address for place in output.places])
+...         print("  output", id_, output.built, output.takes, [place.address for place in output.places])
 ...
 . built
-  decision method DecisionView(active=True, selected='huber')
-  output fit True ['fit#huber']
-  output comparison True ['comparison']
+  decision method DecisionView(used=True, selected='huber')
+  output fit True None ['fit#huber']
+  output comparison True None ['comparison']
 . at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206 built
-  output points True ['points']
+  output points True None ['points']
 ```
 
 What to notice:
 
 - Every analysis of the stack, the root first, with `built` (built in this universe,
   [§16](https://astra-spec.org/0.1/specification/#16-driving-and-consuming)), each decision's
-  `active` and `selected`, and each output's `active` and its result's places here.
-- `fit` gives `fit#huber`, and `comparison` its one result. Nothing has a `when`, so everything
-  is active. `active=None` would mean undetermined (design §4.13 case 6).
+  `used` (whether the universe uses it, with the root driving: the short specification's
+  Results *uses*) and `selected`, and each output's `built` (Results *built*), `takes` (for a
+  switch, the case it takes here: Elements *switch*) and its result's places here.
+- `fit` gives `fit#huber`, and `comparison` its one result. Nothing is a switch here, so
+  `takes` is `None` throughout, every decision is used and every output built. `None` for
+  `used` or `built` would mean undetermined, as for a switch whose decision a universe that
+  doesn't reach it leaves unset (design §4.13 case 6).
 - `to_json()` adds each file's `fields`, as written (step 6).
 
 Under the hood:
 
-- `view.view` (`src/astra/view.py:96`) takes the universe's effective selection from
-  `Context.selections` (`:101`), each decision's option as `min(selection.options(decision))`
-  (`:109`), and each output's result from `context.building.planned` (`:115`). It reads no
-  analysis file, since binding has read them all; only `rules.json`, through `Catalogue.load`
-  (`:99`; chapter 1's step 7 lists the meaning layer's IO).
-- Only a valid stack has a view: `api.view` goes through `_valid` (`src/astra/api.py:112`).
+- `view.view` (`src/astra/view.py:101`) takes the universe's effective selection from
+  `Context.selections` (`:106`), each decision's option as `min(selection.options(decision))`
+  (`:118`) and its use from the root's run (`:119`), what each switch takes from
+  `context.meaning` (`:129`), and each output's result from `context.building.planned` (`:130`).
+  It reads no analysis file, since binding has read them all; only `rules.json`, through
+  `Catalogue.load` (`:104`; chapter 1's step 7 lists the meaning layer's IO).
+- Only a valid stack has a view: `api.view` goes through `_valid` (`src/astra/api.py:113`).
 
 ## 5. check: the statuses, and the stale results in ten lines
 
@@ -352,7 +358,7 @@ What to notice:
   ([§20](https://astra-spec.org/0.1/specification/#20-checking-results)).
 - `universes=["ols"]` keeps only `fit#ols`, which is unchanged, yet `ok` is False: the filters
   narrow the results reported, never the evidence, and the finding cites the stale
-  `comparison` (`src/astra/check.py:239`; design §4.7).
+  `comparison` (`src/astra/check.py:242`; design §4.7).
 - `at="HEAD~1"` checks the analysis as it was at that commit, its records and bytes too.
   `report.at` is then the full commit, not `"worktree"`.
 - `api.history()` gives a `History` whose queries read git on demand. `timeline` lists the
@@ -360,18 +366,18 @@ What to notice:
 
 Under the hood:
 
-- `api.check` (`src/astra/api.py:115`) validates, keeps the errors (`:134`) and calls
-  `check.check` (`:138`), even on an invalid stack (step 7).
-- `check.check` (`src/astra/check.py:187`) plans the whole stack (`:206`), then gives each place
-  its statuses in `_Checker.place` (`:287`): `read_record` (`:297`), then `_then` (`:320`), which
-  binds the stack as it was at the record's commit through a `CommitReader` (`:387`), once per
-  repository, commit and folder (`:356`).
-- `_changes` (`:419`) writes each `STALE_RESULT` message (the selection's at `:453`), and
-  `place` attaches the code to them (`:329`). Bytes are hashed by `hashing.digest` (`:508`), kept
-  in the cache's `hashes` by device and inode with size and modification time
+- `api.check` (`src/astra/api.py:116`) validates, keeps the errors (`:135`) and calls
+  `check.check` (`:139`), even on an invalid stack (step 7).
+- `check.check` (`src/astra/check.py:190`) plans the whole stack (`:209`), then gives each place
+  its statuses in `_Checker.place` (`:291`): `read_record` (`:301`), then `_then` (`:324`),
+  which binds the stack as it was at the record's commit through a `CommitReader` (`:391`), once
+  per repository, commit and folder (`:360`).
+- `_changes` (`:423`) writes each `STALE_RESULT` message (the selection's at `:460`), and
+  `place` attaches the code to them (`:333`). Bytes are hashed by `hashing.digest` (`:529`),
+  kept in the cache's `hashes` by device and inode with size and modification time
   (`src/astra/hashing.py:47`), so an unchanged file costs a `stat`.
-- `CheckReport.ok` is at `src/astra/check.py:136`; evidence statuses come from
-  `_Checker.evidence` (`:537`).
+- `CheckReport.ok` is at `src/astra/check.py:139`; evidence statuses come from
+  `_Checker.evidence` (`:558`).
 
 ## 6. The four JSON shapes
 
@@ -391,7 +397,7 @@ astra-check-report/1 ['shape', 'root', 'at', 'results', 'evidence', 'errors']
 >>> print(json.dumps(place))
 {"name": "fit", "address": "fit#huber", "record": ".astra/records/huber/fit.json", "bytes": "results/huber/fit.json", "record_status": "unchanged", "bytes_status": "present", "committed": true, "reasons": [], "environment": []}
 >>> print(json.dumps(api.plan().to_json()["results"][3]["inputs"]))
-[{"entry": "fit#ols", "path": "results/ols/fit.json", "commit": null, "result": 1}, {"entry": "fit#huber", "path": "results/huber/fit.json", "commit": null, "result": 2}]
+[{"entry": "fit#ols", "path": "results/ols/fit.json", "commit": null, "result": 1, "via": []}, {"entry": "fit#huber", "path": "results/huber/fit.json", "commit": null, "result": 2, "via": []}]
 >>> exit()
 $ astra check --json | python -c 'import json, sys; from astra import api; print(json.load(sys.stdin) == api.check().to_json())'
 True
@@ -410,8 +416,10 @@ What to notice:
   yet: astra-spec's `conformance/` has a schema only for its cases' `expected.json`. Their form
   is what `to_json` gives, pinned by astra-tools' tests.
 - In `astra-plan/1`, an input's `result` is the index of the result it reads (`1`, `2`), so the
-  plan is a graph by index. `astra-check-report/1` repeats `names`, `owner`, `output` and
-  `universe` for each result instead, and puts each place's statuses beside its place's fields.
+  plan is a graph by index. `via` lists, as written, each case taken on the way to it where the
+  entry reads a switch: empty here, where nothing is one (Try 1 makes one).
+  `astra-check-report/1` repeats `names`, `owner`, `output` and `universe` for each result
+  instead, and puts each place's statuses beside its place's fields.
 - `astra check --json` prints the same dict as `api.check().to_json()`.
 - The exit codes are the CLI's, not the API's: the API raises `RequestError`, and the command
   makes it a usage error, exit 2.
@@ -421,12 +429,12 @@ Under the hood:
 - Each `to_json` is a hand-written dict over `dataclasses.asdict` of the small pieces (a place,
   an identity, a reason, a location): `ValidationReport.to_json` (`src/astra/validate.py:43`),
   `Diagnostic.to_json`, which is `asdict(self)` (`src/astra/diagnostics.py:44`),
-  `Plan.to_json` (`src/astra/plan.py:113`, with the index at `:116`), `UniverseView.to_json`
-  (`src/astra/view.py:57`; `fields` is `member.document.value`, `:75`) and
-  `CheckReport.to_json` (`src/astra/check.py:144`).
+  `Plan.to_json` (`src/astra/plan.py:124`, with the index at `:127`), `UniverseView.to_json`
+  (`src/astra/view.py:62`; `fields` is `member.document.value`, `:80`) and
+  `CheckReport.to_json` (`src/astra/check.py:147`).
 - `write_json` prints `json.dumps(document, indent=2, ensure_ascii=False)`
   (`src/astra/cli/__init__.py:129`). `cli/view.py` maps `RequestError` to `click.BadParameter`
-  (`src/astra/cli/view.py:34`). `FAILED = 1` and `USAGE = 2` are at
+  (`src/astra/cli/view.py:35`). `FAILED = 1` and `USAGE = 2` are at
   `src/astra/cli/__init__.py:50`; the module's docstring lists which command exits how.
 
 ## 7. An invalid analysis, and a diagnostic traced to its code
@@ -466,33 +474,34 @@ astra.yaml breaks a MUST: `astra validate` says where
 >>> from astra.diagnostics import Catalogue, OWN
 >>> catalogue = Catalogue.load()
 >>> catalogue.rule("UNKNOWN_OPTION")
-Rule(code='UNKNOWN_OPTION', layer='validator', level='MUST', statement="Each option a condition, option reference or selection names is one of its decision's", source=None, status=None)
+Rule(code='UNKNOWN_OPTION', layer='validator', level='MUST', statement="Each option an option reference, selection or key of `cases` names is one of its decision's", source=None, status=None)
 >>> catalogue.level("UNKNOWN_OPTION"), catalogue.level("COMMIT_NOT_ANCESTOR")
 ('error', 'warning')
 >>> list(OWN)
 ['UNSUPPORTED_SPEC_VERSION', 'REMOTE_UNREACHABLE', 'COMMIT_NOT_ANCESTOR']
 >>> catalogue.version, len(catalogue.rules), len(catalogue.errors)
-('ASTRA rule catalogue, schema version dev', 63, 285)
+('ASTRA rule catalogue, schema version dev', 64, 296)
 >>> exit()
 $ astra rules UNKNOWN_OPTION
 UNKNOWN_OPTION
 validator, MUST
-Each option a condition, option reference or selection names is one of its decision's
+Each option an option reference, selection or key of `cases` names is one of its decision's
 $ git checkout --quiet astra.yaml
 $ cd "$ASTRA_TOOLS"
 $ git grep -n '"UNKNOWN_OPTION"' -- src/astra
-src/astra/rules/decisions.py:17:CODES = frozenset({"UNKNOWN_OPTION"})
-src/astra/rules/decisions.py:34:        yield context.diagnostic("UNKNOWN_OPTION", message, context.at(resolution.file, pointer))
+src/astra/rules/decisions.py:19:CODES = frozenset({"UNKNOWN_OPTION"})
+src/astra/rules/decisions.py:49:        yield context.diagnostic("UNKNOWN_OPTION", message, location)
 $ git grep -n 'has no option' -- src/astra
-src/astra/plan.py:543:    # OPEN(O30): an inactive decision has no option selected.
-src/astra/rules/decisions.py:33:        message = f"`{resolution.address}` has no option `{option}`: its options are {listed}"
+src/astra/rules/decisions.py:43:                f"`{owner.id}` switches on `{decision.address}`, which has no option `{option}` "
+src/astra/rules/decisions.py:47:            message = f"`{resolution.address}` has no option `{option}`: its options are {listed}"
 $ git grep -n '"STALE_RESULT"' -- src/astra
-src/astra/check.py:63:        "STALE_RESULT",
-src/astra/check.py:323:                    reasons.append(self.reason("STALE_RESULT", then, at))
-src/astra/check.py:329:                    reasons.extend(self.reason("STALE_RESULT", change, at) for change in changes)
+src/astra/check.py:66:        "STALE_RESULT",
+src/astra/check.py:327:                    reasons.append(self.reason("STALE_RESULT", then, at))
+src/astra/check.py:333:                    reasons.extend(self.reason("STALE_RESULT", change, at) for change in changes)
 $ git grep -n 'where it selected' -- src/astra
+src/astra/check.py:654:                f"`{step.universe.id}`, where it selected `{before.option}` at {commit}"
 $ git grep -n 'selects {' -- src/astra
-src/astra/check.py:453:                    f"`{written}` selects {_option(option)} in `{result.universe.id}`, where it "
+src/astra/check.py:460:                    f"`{written}` selects {_option(option)} in `{result.universe.id}`, where it "
 $ cd "$TOUR/work/06/build/line-fit"
 ```
 
@@ -505,11 +514,11 @@ What to notice:
 - `api.plan()` raises `InvalidAnalysisError`, which holds the validation report. `api.check()`
   doesn't raise: it holds the errors, and gives statuses only to the results whose planning is
   determined (design §4.13 case 12, astra-tools' policy of when a rule isn't checked). Here
-  that is all four: no `when` tests `method`, so `hubr` leaves every result's planning
+  that is all four: no switch is on `method`, so `hubr` leaves every result's planning
   determined, and `fit#huber` gets statuses: stale, as `hubr` isn't the `huber` its record's
-  commit selected. A `when` that tested `method` would be undetermined in `huber` (case 6), and case
-  12 would then withhold statuses from `fit#huber` and from `comparison`, which reads it
-  (Try 1). `astra check` would exit 1 on the errors even with every status unchanged
+  commit selected. A switch on `method` would be undetermined in `huber`, where the option
+  selected names nothing (case 6), and case 12 would then withhold statuses from what reads it
+  there (Try 1). `astra check` would exit 1 on the errors even with every status unchanged
   (`CheckReport.ok`).
 - The trace: the message gives the code; `Catalogue.rule` gives rules.json's row (layer, level,
   statement), with no section, since the short specification's rules.json gives none
@@ -522,9 +531,11 @@ What to notice:
 - No rule module states a level: `Catalogue.level` makes a `MUST` an error and a `SHOULD` a
   warning. astra-tools' three own codes are in `OWN`, with `source='astra-tools'`; `astra
   rules` lists them apart.
-- A check code is attached in one place (`check.py:323`, `:329`) and its messages written in
-  another. The phrase `where it selected` spans an f-string's line break, so grep a shorter fixed
-  part.
+- A check code is attached in one place (`check.py:327`, `:333`) and its messages written in
+  another. The message of step 5, "`method` selects `ols` in `huber`, where it selected
+  `huber`", spans an f-string's line break, so `where it selected` finds only another message,
+  the one for a switch whose decision selects another option than at the record's commit
+  (`check.py:654`); grep a shorter fixed part.
 - The catalogue says `schema version dev`: the tour's astra-spec is a development build, not a
   release.
 
@@ -537,11 +548,11 @@ Under the hood:
 - `rules.MODULES` lists the rule modules (`src/astra/rules/__init__.py:37`) and `rules.CODES`
   unions their `CODES` (`:51`); `validate.unchecked` (`src/astra/validate.py:62`) gives every
   validator code of rules.json that no module declares.
-- In `rules/decisions.py`: `CODES` (`src/astra/rules/decisions.py:17`), the message (`:33`) and
-  `context.diagnostic` (`:34`), which takes the level from the catalogue
-  (`src/astra/rules/context.py:29`).
+- In `rules/decisions.py`: `CODES` (`src/astra/rules/decisions.py:19`), the message (`:47`; a
+  key of a switch's `cases` gets its own, `:42-45`) and `context.diagnostic` (`:49`), which
+  takes the level from the catalogue (`src/astra/rules/context.py:30`).
 - `astra plan` writes the validation report on `InvalidAnalysisError`
-  (`src/astra/cli/plan.py:40`), and `astra view` too (`src/astra/cli/view.py:30`).
+  (`src/astra/cli/plan.py:41`), and `astra view` too (`src/astra/cli/view.py:31`).
 
 ## 8. Extension points: environments and stand-ins
 
@@ -613,19 +624,19 @@ Under the hood:
 
 - `environments.registered` (`src/astra/environments.py:51`) loads every entry point of the
   group `astra.environments` (`:17`); `answers` (`:58`) asks each scheme that recognises the IRI.
-  The checker loads them once per check (`src/astra/check.py:276`) and asks once per IRI
-  (`:339`). The text is drawn by `src/astra/cli/text/check.py:49`.
+  The checker loads them once per check (`src/astra/check.py:280`) and asks once per IRI
+  (`:343`). The text is drawn by `src/astra/cli/text/check.py:49`.
 - `standins.registered` (`src/astra/sources/standins.py:142`) gives `BUILT_IN` (`:138`), then the
   plug-ins. The validator loads them at each validation (`src/astra/rules/inputs.py:37`): a path
   with no file is fine where a stand-in recognises it (`:94`), the message names them all
   (`:99`), and `git ls-files` is asked about each stand-in's place too (`:52`).
-- `_Checker._content` (`src/astra/check.py:488`) asks a stand-in for an input's hash only where
-  the stand-in sits at the path itself (`place(path) == path`, `:495`), and then compares what
+- `_Checker._content` (`src/astra/check.py:509`) asks a stand-in for an input's hash only where
+  the stand-in sits at the path itself (`place(path) == path`, `:516`), and then compares what
   it gives, never the stand-in's own bytes. A DVC file sits beside the path (`<path>.dvc`), so
-  the checker never asks it: it hashes the file at the path where one is there (`:498`), as in
+  the checker never asks it: it hashes the file at the path where one is there (`:519`), as in
   a working tree after `dvc pull`, and the result can be `unchanged`. Only where no file is at
   the path (at a commit, or before `dvc pull`) does `_content` give `None` and the result go
-  stale (`:466`), and only then because a DVC file gives an MD5, not a SHA-256
+  stale (`:487`), and only then because a DVC file gives an MD5, not a SHA-256
   (`src/astra/sources/standins.py:135`). Chapter 5's step 6 runs the stale case, and chapter
   4's step 9 a Git LFS pointer, which sits at the path.
 - Both protocols are `typing.Protocol`s (`src/astra/environments.py:21`,
@@ -675,7 +686,7 @@ $ cd "$ASTRA_TOOLS"
 $ git grep -l subprocess -- src/astra
 src/astra/sources/git.py
 $ git grep -n -e 'os.replace(' -e '\.rename(' -- src/astra
-src/astra/api.py:237:        os.replace(temporary, file)
+src/astra/api.py:238:        os.replace(temporary, file)
 src/astra/cache.py:71:            os.replace(temporary, path)
 src/astra/cache.py:94:                kept.rename(aside / namespace)
 src/astra/cli/schema.py:43:            os.replace(temporary, path)
@@ -684,20 +695,17 @@ src/astra/records.py:296:        os.replace(source, target)
 src/astra/records.py:306:        os.replace(temporary, target)
 src/astra/sources/remote.py:68:            made.rename(path)
 $ git grep -n -E '\(§[34]' -- src/astra
-src/astra/api.py:176:    revision `at`, where it is valid (§4). Raises InvalidAnalysisError where it isn't, and
-src/astra/check.py:284:        """`code` broken, at the level its rule's `MUST` or `SHOULD` gives (§4)."""
+src/astra/api.py:177:    revision `at`, where it is valid (§4). Raises InvalidAnalysisError where it isn't, and
+src/astra/check.py:288:        """`code` broken, at the level its rule's `MUST` or `SHOULD` gives (§4)."""
 src/astra/diagnostics.py:6:broken is an error and a `SHOULD` a warning, in every layer (§4).
 src/astra/diagnostics.py:140:        """The level of `code`: an error for a `MUST`, a warning for a `SHOULD` (§4)."""
 src/astra/diagnostics.py:146:        """A diagnostic for `code`, at the level its rule's `MUST` or `SHOULD` gives (§4)."""
 src/astra/reference.py:2:from astra-spec's LinkML sources through linkml-runtime, the extra `[reference]` (§3 *Fields*,
-src/astra/rules/context.py:32:        """A diagnostic for `code`, at its rule's level (§4)."""
+src/astra/rules/context.py:33:        """A diagnostic for `code`, at its rule's level (§4)."""
 src/astra/validate.py:1:"""validate(): the validator's report on an analysis (§4, design §4.11).
 src/astra/validate.py:40:        """True when no `MUST` is broken: warnings and `unchecked` notwithstanding (§4)."""
-$ git grep -n 'OPEN(' -- src/astra
-src/astra/plan.py:543:    # OPEN(O30): an inactive decision has no option selected.
-src/astra/plan.py:605:        return result.decisions[entry] or ""  # OPEN(O30)
-src/astra/universes.py:160:    activity = _activity(stack, whens, (*kept, *own))  # OPEN(O2): step 3 is one pass
-src/astra/universes.py:222:            return None  # OPEN(O16): unset, and not inactive
+$ git grep -n 'OPEN(' -- src/astra; echo "exit $?"
+exit 1
 $ cd "$TOUR/work/06/build/line-fit"
 ```
 
@@ -706,8 +714,8 @@ What to notice, and why it matters when reading:
 - **git only through its binary.** One check runs six git processes. There is one
   `cat-file --batch` per `CommitReader` (`src/astra/sources/reader.py:187`), each open for as
   long as its reader: one at the record's commit, 3732bd7, bound for the comparison
-  (`src/astra/check.py:383`), after `cat-file -t` has asked whether git has it
-  (`src/astra/sources/git.py:103`); one at HEAD, for `committed` (`src/astra/check.py:529`).
+  (`src/astra/check.py:387`), after `cat-file -t` has asked whether git has it
+  (`src/astra/sources/git.py:103`); one at HEAD, for `committed` (`src/astra/check.py:550`).
   `Objects`' docstring and design §4.3 read as one per repository; it is one per reader. The
   `ls-files` asks about `config.json`, and about `config.json.dvc`, the DVC stand-in's place.
   Every git question is a visible command in `sources/git.py`, with git's own configuration and
@@ -716,10 +724,10 @@ What to notice, and why it matters when reading:
   67 imported), dunder names aside: the scan skips them, and `api.__all__` is a list. Constants
   are `MappingProxyType`, `frozenset` or tuples, and `Catalogue.load()` builds a new catalogue
   at each call. No in-process registry or module-level cache exists: the
-  plug-ins are read from entry-point metadata at each call (`src/astra/check.py:275`-`276`,
+  plug-ins are read from entry-point metadata at each call (`src/astra/check.py:279`-`280`,
   `src/astra/rules/inputs.py:37`), and the caches live on objects made for one call,
-  `Context`'s `cached_property`s (`src/astra/rules/context.py:49`) and `_Checker`'s dicts
-  (`src/astra/check.py:277`). So a call's output depends on its arguments, the files, the
+  `Context`'s `cached_property`s (`src/astra/rules/context.py:50`) and `_Checker`'s dicts
+  (`src/astra/check.py:281`). So a call's output depends on its arguments, the files, the
   environment (`ASTRA_CACHE_DIR`, git's own configuration) and the distributions installed or
   visible on `PYTHONPATH` (step 8), never on what an earlier call left in memory; several
   processes can share one cache.
@@ -739,16 +747,11 @@ What to notice, and why it matters when reading:
   [§3](https://astra-spec.org/0.1/specification/#3-conventions). The design document is the
   exception: it names the specification it was written against (`6c0ddb4`, in its header), so
   its `§3` for the four roles is right as it stands.
-- **The open questions.** Four `OPEN(` markers for design §5's three, all about `when`
-  ([§9](https://astra-spec.org/0.1/specification/#9-conditions), RFC #93), each keeping the
-  simplest reading. Chapter 1's step 7 ran the same grep, and chapter 3 meets each reading
-  (O2 in its step 2, O16 in its Try 4, O30 in its step 4):
-
-  | Id | Question | Reading | Marker |
-  |---|---|---|---|
-  | O2 | The effective selection's step 3: once, or until nothing changes? | once | `universes.py:160`, in `_derive`, which `effective_selection` calls (`:144`); design §5 names `effective_selection` |
-  | O16 | A `when` that tests a decision inactive in the universe: undetermined? | no: `d.o` doesn't hold, `~d.o` does | `universes.py:222`, in `_activity` |
-  | O30 | `{decisions.<entry>}` for a decision inactive in that universe? | `""`, and `null` in the plan | `plan.py:543` (`selected`), `:605` (`render_command`) |
+- **The open questions.** None. Design §5 lists each question of the specification's meaning
+  met in later work, with the reading kept meanwhile and the one place that keeps it, marked
+  `# OPEN(<id>)`; the list is empty, so the grep finds no marker (chapter 1's step 7 ran it
+  too). The three it held, O2, O16 and O30, were all about conditions, and closed when issue
+  #93 took conditions out of the specification; switches took their place (chapter 3).
 
 - **Design §1's seven principles** settle what the code does and doesn't do; read them before
   any module.
@@ -776,27 +779,31 @@ How the suite is organised, and how to run one test of it.
 ```console
 $ cd "$ASTRA_TOOLS"
 $ cat astra-spec.pin
-7de4f21e57a7f23231821a5c3a4b6c560274f36b
+31a1a8b26117f505563b2bc2eeb00db2f3d4aa89
 $ python -m pytest -q -p no:cacheprovider --collect-only | sed -n 's/::.*//p' | sort | uniq -c | sort -rn | head -8
-    125 tests/test_fixtures.py
+    131 tests/test_fixtures.py
+    122 tests/test_conformance.py
      75 tests/test_check.py
      73 tests/test_import_cost.py
-     66 tests/test_conformance.py
      55 tests/test_validate.py
-     39 tests/test_plan.py
+     52 tests/test_switches.py
+     37 tests/test_plan.py
      36 tests/test_codes.py
-     28 tests/test_cli.py
 $ python -m pytest -q -p no:cacheprovider tests/test_codes.py -k UNKNOWN_OPTION
 .                                                                        [100%]
 1 passed, 35 deselected in …s
 $ python -m pytest -q -p no:cacheprovider -rp tests/test_conformance.py -k option
-....                                                                     [100%]
+........                                                                 [100%]
 =========================== short test summary info ============================
 PASSED tests/test_conformance.py::test_a_case_gives_its_verdict[022-unknown-option]
 PASSED tests/test_conformance.py::test_a_case_gives_its_verdict[030-missing-required-option]
 PASSED tests/test_conformance.py::test_a_case_gives_its_verdict[031-incompatible-options]
 PASSED tests/test_conformance.py::test_a_case_gives_its_verdict[032-excluded-option-selected]
-4 passed, 62 deselected in …s
+PASSED tests/test_conformance.py::test_a_case_gives_its_verdict[067-option-without-a-case-builds-nothing]
+PASSED tests/test_conformance.py::test_a_case_gives_its_verdict[078-case-keyed-by-an-unknown-option]
+PASSED tests/test_conformance.py::test_a_case_gives_its_verdict[090-case-on-an-excluded-option-uses-statically]
+PASSED tests/test_conformance.py::test_a_case_gives_its_verdict[105-switch-decision-selects-an-excluded-option]
+8 passed, 114 deselected in …s
 $ cd "$TOUR/work/06/build/line-fit"
 ```
 
@@ -809,11 +816,15 @@ What to notice:
 - The oracle is astra-spec (design §1, principle 6, which names its fixtures, examples and
   sections), now through its conformance suite (design §4.11), at the commit in
   `astra-spec.pin`. `test_fixtures.py` runs the suite's documents (parse and schema layers),
-  `test_conformance.py` its 65 analysis cases, and one test that some are found.
+  `test_conformance.py` its 121 analysis cases, and one test that some are found.
 - `test_codes.py` has one case per validator code, 34: rules.json's 31 and astra-tools' own
   three, and two tests that compare `CASES` and `unchecked` with the catalogue. The modules
   beside it, one per section (`test_decisions.py`, `test_inputs.py`, …), hold each rule's
   breaking and keeping cases in full, and the design §4.13 cases.
+- Switches have modules of their own: `test_switches.py` for binding and the validator's rules
+  on them, `test_switches_plan.py` for the plan, the view and the check through them. The
+  conformance cases from 065 on are about switches and what a universe uses (four of them
+  above).
 - A test id says what it covers: a code, a conformance case's folder, a module's name.
 - `test_import_cost.py` is 73 tests: one per module (67), one that every module is listed,
   three on the light commands (`--help`, completion, `validate --json`) and two on where rich
@@ -825,11 +836,11 @@ Under the hood:
   suite runs against whatever astra-spec the environment has. An autouse fixture gives every
   test a cache of its own (`tests/conftest.py:51`), and `build` (`tests/conftest.py:120`) is a
   runner that writes bytes and records without running a recipe.
-- `test_codes.py`: `CASES` (`tests/test_codes.py:68`) maps each code to its section, its root's
-  `astra.yaml` and the pointer it is reported at; the module fixture (`:363`) builds one
-  repository with a folder per code; `test_every_validator_code_has_a_case` (`:405`) compares
-  `CASES` with the catalogue, and the test (`:415`) is parametrised over
-  `Catalogue.load().codes("validator")` (`:402`).
+- `test_codes.py`: `CASES` (`tests/test_codes.py:72`) maps each code to its section, its root's
+  `astra.yaml` and the pointer it is reported at; the module fixture (`:361`) builds one
+  repository with a folder per code; `test_every_validator_code_has_a_case` (`:403`) compares
+  `CASES` with the catalogue, and the test (`:413`) is parametrised over
+  `Catalogue.load().codes("validator")` (`:400`).
 - `test_conformance.py`: each case's `files/` is copied, then its `setup.sh` runs, or else one
   commit of every file (`tests/test_conformance.py:45`), with a fixed identity and date, as this
   tour's setups do (`:22`). The test (`:76`) compares `valid`, then each `must_report` entry's
@@ -840,26 +851,43 @@ Under the hood:
 
 ## Try
 
-1. In line-fit, give `method` a third option, `lasso: {}`, and `fit` a
-   `when: ["~method.lasso"]`. Predict `astra check`. Then make `huber` select `hubr`, as in
-   step 7, and predict which places `astra check` gives statuses to now.
+1. In line-fit, give `method` a third option, `lasso: {}`, and put `fit` behind a switch on
+   `method`, `fitted`, whose cases for `ols` and `huber` are both `fit`; make `comparison` read
+   `fitted#ols` and `fitted#huber`, in its `inputs` and its command's placeholders. Predict
+   `astra check`. Then make `huber` select `hubr`, as in step 7, and predict which places
+   `astra check` gives statuses to now.
 
 <details><summary>Answer</summary>
 
 ```console
-$ perl -0pi -e 's/(    options:\n)/$1      lasso: {}\n/; s/(    decisions: \[method\]\n)/$1    when: ["~method.lasso"]\n/' astra.yaml
+$ perl -0pi -e 's/(    options:\n)/$1      lasso: {}\n/; s/(\n  comparison:\n)/\n  fitted:\n    label: The fitted line, for the methods it is made for\n    switch: method\n    cases: {ols: fit, huber: fit}$1/; s/fit#(ols|huber)/fitted#$1/g' astra.yaml
+$ sed -n '/^  fitted:/,/compare.py/p' astra.yaml
+  fitted:
+    label: The fitted line, for the methods it is made for
+    switch: method
+    cases: {ols: fit, huber: fit}
+  comparison:
+    label: Least squares against Huber
+    description: Both fitted lines, and how far the Huber line is from the least-squares one.
+    type: table
+    format: json
+    inputs: [fitted#ols, fitted#huber]
+    recipe:
+      command: python3 src/compare.py {inputs.fitted#ols} {inputs.fitted#huber} {output}
 $ astra check
 .astra/records/points.json at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206  points  unchanged  present
 .astra/records/ols/fit.json  fit#ols  unchanged  present
 .astra/records/huber/fit.json  fit#huber  unchanged  present
-.astra/records/comparison.json  comparison  unchanged  present
+.astra/records/comparison.json  comparison  stale  present
+  error STALE_RESULT its recipe's command isn't the one it had at f9662d2fec04
+  error STALE_RESULT its inputs are [`fitted#ols`, `fitted#huber`], in that order, where they were [`fit#ols`, `fit#huber`] at f9662d2fec04
 astra.yaml
-  55:19 unchanged `comparison`
-astra.yaml: 4 place(s) of planned results, 4 unchanged, 0 stale, 0 missing; 0 absent
+  58:19 error STALE_EVIDENCE `comparison` cites `comparison`, whose record is stale
+astra.yaml: 4 place(s) of planned results, 3 unchanged, 1 stale, 0 missing; 0 absent
 $ perl -pi -e 's/\{method: huber\}/{method: hubr}/' astra.yaml
 $ astra check; echo "exit $?"
 astra.yaml
-  46:25 error UNKNOWN_OPTION `method` has no option `hubr`: its options are `lasso`, `ols`, `huber`
+  49:25 error UNKNOWN_OPTION `method` has no option `hubr`: its options are `lasso`, `ols`, `huber`
 .astra/records/points.json at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206  points  unchanged  present
 .astra/records/ols/fit.json  fit#ols  unchanged  present
 astra.yaml: invalid, 1 error(s), so only the results it leaves determined; 2 place(s) of planned results, 2 unchanged, 0 stale, 0 missing; 0 absent
@@ -867,17 +895,27 @@ exit 1
 $ git checkout --quiet astra.yaml
 ```
 
-- First, everything stays unchanged: a new option and a `when` are not among what
-  `STALE_RESULT` compares ([§20](https://astra-spec.org/0.1/specification/#20-checking-results)),
-  and `~method.lasso` holds in both universes, so `fit` stays active.
-- With `hubr`, the `when` tests a decision that `huber` sets to an option naming nothing, so it
-  is undetermined there (design §4.13 case 6; `None` at `src/astra/universes.py:223`).
-  `building` plans a result only where its output's activity is `True`
-  (`src/astra/universes.py:583`), so `fit#huber` isn't planned; `comparison` reads it, so
-  `plan._reads` gives `None` (`src/astra/plan.py:287`) and `visit` leaves it out too.
+- First, `fit#ols` and `fit#huber` stay unchanged. `fit` is now named by a case, so it is
+  planned only where something planned reads it (the short specification's Results
+  *plans*): `comparison` reads it through `fitted#ols` and `fitted#huber`, each pin taking
+  `fit` in its universe. Their commands, inputs and decisions are what their records hold, and
+  a new option isn't among what `STALE_RESULT` compares
+  ([§20](https://astra-spec.org/0.1/specification/#20-checking-results)). `lasso` has no case,
+  and that is no error: where `method` selected it, `fitted` wouldn't be built, nor what reads
+  it without a pin (Elements *switch*). No universe selects it.
+- `comparison` is stale: its command and its `inputs`, as written, aren't those of its record's
+  commit, so two `STALE_RESULT` reasons, and the finding that cites it gets `STALE_EVIDENCE`.
+  Rebuilt, it is also made from what it reads through `fitted`: the decision, the option
+  selected where the pin reads it, and the case taken (Results *made from*). A later change of
+  either option, or of the case it takes, makes it stale again, whatever bytes result.
+- With `hubr`, `huber` selects an option that names nothing, so what `fitted` takes there is
+  undetermined (design §4.13 case 6; `None` from `Meaning.taken`,
+  `src/astra/universes.py:625`), and so is the planning of what is reached only through it:
+  `fit#huber`, and `comparison`, which reads it, so `plan._reads` gives `None`
+  (`src/astra/plan.py:393`) and `visit` leaves it out.
 - Case 12: neither gets statuses, and nor does the evidence, which cites `comparison`
-  (`src/astra/check.py:555`). The summary line says so, in astra-tools' own words
-  (`src/astra/cli/text/check.py:67`). `fit#ols` keeps its: in `ols`, `~method.lasso` holds.
+  (`src/astra/check.py:577-578`). The summary line says so, in astra-tools' own words
+  (`src/astra/cli/text/check.py:67`). `fit#ols` keeps its: in `ols`, `fitted` takes `fit`.
 
 </details>
 
@@ -929,7 +967,7 @@ $ git checkout --quiet results/huber/fit.json
 
 `ABSENT_RESULT` is a `SHOULD`, a warning, and absent bytes don't fail the check: `ok` stays True.
 `comparison` stays unchanged: it compares the hash `fit#huber`'s record gives with the one it
-recorded, not the file (`src/astra/check.py:484`).
+recorded, not the file (`src/astra/check.py:505`).
 
 </details>
 
@@ -943,8 +981,8 @@ recorded, not the file (`src/astra/check.py:484`).
 ```console
 $ cd "$ASTRA_TOOLS"
 $ git grep -n -e '"RESULT_IN_TWO_PLACES"' -e '"INVALID_SYNTAX"' -e '"REMOTE_UNREACHABLE"' -e '"MISPLACED_RECORD"' -- src/astra
-src/astra/check.py:61:        "MISPLACED_RECORD",
-src/astra/check.py:319:                reasons.append(self.reason("MISPLACED_RECORD", message, at))
+src/astra/check.py:64:        "MISPLACED_RECORD",
+src/astra/check.py:323:                reasons.append(self.reason("MISPLACED_RECORD", message, at))
 src/astra/diagnostics.py:73:                "REMOTE_UNREACHABLE",
 src/astra/load.py:30:CODES = frozenset({"INVALID_SYNTAX"})
 src/astra/load.py:107:            raise ParseError("INVALID_SYNTAX", message)
@@ -958,14 +996,14 @@ src/astra/load.py:180:            raise ParseError("INVALID_SYNTAX", message)
 src/astra/load.py:186:    raise ParseError("INVALID_SYNTAX", f"{text} isn't a JSON number")
 src/astra/rules/commits.py:40:    {"COMMIT_NOT_FOUND", "COMMIT_NOT_ANCESTOR", "REMOTE_UNREACHABLE", "DECLARED_ANALYSIS_INVALID"}
 src/astra/rules/commits.py:77:                yield context.diagnostic("REMOTE_UNREACHABLE", message, at)
-src/astra/rules/driving.py:41:        "RESULT_IN_TWO_PLACES",
-src/astra/rules/driving.py:298:            yield context.diagnostic("RESULT_IN_TWO_PLACES", message, place, [related])
+src/astra/rules/driving.py:49:        "RESULT_IN_TWO_PLACES",
+src/astra/rules/driving.py:302:            yield context.diagnostic("RESULT_IN_TWO_PLACES", message, place, [related])
 $ cd "$TOUR/work/06/build/line-fit"
 ```
 
 - `RESULT_IN_TWO_PLACES` is §16's, so `rules/driving.py`.
 - `INVALID_SYNTAX` is the parse layer's, `load.py`, for both kinds of file: it raises
-  `ParseError`, which binding (`src/astra/stack.py:287`) and `read_record`
+  `ParseError`, which binding (`src/astra/stack.py:305`) and `read_record`
   (`src/astra/records.py:140`) turn into a diagnostic, or a reason of `INVALID_RECORD`.
 - `REMOTE_UNREACHABLE` is astra-tools' own (design §3): its rule is in `OWN`, and §17's module,
   `rules/commits.py`, reports it.
@@ -984,12 +1022,13 @@ $ git grep -l UNKNOWN_OPTION -- tests
 tests/test_codes.py
 tests/test_decisions.py
 tests/test_plan.py
+tests/test_switches.py
 tests/test_universes.py
 $ git grep -n 'in selection.message' -- tests
-tests/test_decisions.py:92:    assert "`a`, `b`" in selection.message
+tests/test_decisions.py:98:    assert "`a`, `b`" in selection.message
 $ python -m pytest -q -p no:cacheprovider tests/test_decisions.py
-...                                                                      [100%]
-3 passed in …s
+....                                                                     [100%]
+4 passed in …s
 $ cd "$TOUR/work/06/build/line-fit"
 ```
 
@@ -1035,7 +1074,7 @@ $ cd ../line-fit
 - With it, the stand-in at the path gives the content's hash and size, and the checker compares
   those, never the stand-in's own bytes
   ([§20](https://astra-spec.org/0.1/specification/#20-checking-results);
-  `src/astra/check.py:494`): unchanged.
+  `src/astra/check.py:515`): unchanged.
 
 </details>
 
@@ -1059,6 +1098,6 @@ $ cd ../line-fit
   and `astra.standins`, each an object with a protocol's members; that is how lightcone-cli would
   add its own.
 - The code keeps git behind its binary, writes atomically and holds no module-level mutable
-  state, though plug-ins are read from the installed distributions at each call; its
-  four `OPEN(` markers keep design §5's readings on `when`; its tests take astra-spec's
-  conformance suite as the oracle.
+  state, though plug-ins are read from the installed distributions at each call; it holds no
+  `OPEN(` marker, as design §5 has no open question; its tests take astra-spec's conformance
+  suite as the oracle.
