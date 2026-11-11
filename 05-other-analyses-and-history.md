@@ -80,8 +80,8 @@ no cache yet
 
 What to notice:
 - `HEAD~n` later counts back through this log: `HEAD~1` is 5b04998 (step 8's new declaration, nothing built), `HEAD~4` is 48b131e (step 5's build), `HEAD~8` is aca519e (step 2's build), `HEAD~9` the first commit.
-- The declared commit is noisy-line's HEAD, step 7's build: a commit that holds the records, later than the one their recipe ran from ([§20 *Results of an analysis from a commit*](https://astra-spec.org/0.1/specification/#results-of-an-analysis-from-a-commit)).
-- A `file://` URL is §17's form for another repository on the same machine ([§17](https://astra-spec.org/0.1/specification/#17-analyses-from-another-commit-or-repository)).
+- The declared commit is noisy-line's HEAD, step 7's build: a commit that holds the records, later than the one their recipe ran from ([Results](https://astra-spec.org/0.1/specification/#results), in the paragraph on *present*).
+- A `file://` URL is a `url` that names another repository on the same machine ([Elements](https://astra-spec.org/0.1/specification/#elements) *declare*).
 - `astra cache path` prints where the cache would be. Nothing has made it yet.
 
 Under the hood:
@@ -128,8 +128,8 @@ Under the hood:
 - `_store` (`remote.py:58`) names the folder by the URL's hash (`remote.py:62`) and makes it in a temporary folder with `Repository.init_bare` (`src/astra/sources/git.py:61`), which sets only `remote.origin.url` (`git.py:65`). It then renames it into place (`remote.py:68`), so two processes never make one store together.
 - `Repository.fetch` (`git.py:150`) runs `git fetch --quiet --no-tags --no-write-fetch-head --filter=blob:none origin <commit>:refs/astra/<commit>` (`git.py:154-157`) and then asks `has_commit` (`git.py:158`). `_git` captures git's stderr (`git.py:35-42`), and `fetch` looks at nothing but `has_commit` afterwards, so git's warning goes nowhere. `GIT_TERMINAL_PROMPT=0` stops git from waiting for a password (`git.py:30`).
 - `CommitReader` (`src/astra/sources/reader.py:170`) never checks anything out. It reads through one long-lived `git cat-file --batch` (`Objects`, `git.py:218-249`): the commit for its tree (`_root`, `reader.py:251-260`), a tree per path segment (`_walk`, `reader.py:236-249`), then the blob (`read`, `reader.py:193-197`).
-- `DECLARED_ANALYSIS_INVALID` needs noisy-line validated as its own root at its commit. `_judged` (`src/astra/rules/commits.py:173`) does that and keeps the list of `MUST`s broken in `validity`, keyed by astra-tools' version, the catalogue's version, the folder and the commit (`commits.py:186`). It keeps nothing where the verdict rests on a commit not got or on `COMMIT_NOT_FOUND` (`commits.py:200`). The URL isn't in the key: a commit is one analysis wherever it came from ([§17 *Identity*](https://astra-spec.org/0.1/specification/#identity)).
-- The store, the fetch and the `validity` verdicts are astra-tools' own (design §4.3, §4.9). The specification says only that a commit counts as got when it can be fetched or was kept from an earlier fetch ([§17 *Reading one*](https://astra-spec.org/0.1/specification/#reading-one)).
+- `DECLARED_ANALYSIS_INVALID` needs noisy-line validated as its own root at its commit. `_judged` (`src/astra/rules/commits.py:173`) does that and keeps the list of `MUST`s broken in `validity`, keyed by astra-tools' version, the catalogue's version, the folder and the commit (`commits.py:186`). It keeps nothing where the verdict rests on a commit not got or on `COMMIT_NOT_FOUND` (`commits.py:200`). The URL isn't in the key: a commit is one analysis wherever it came from ([Elements](https://astra-spec.org/0.1/specification/#elements) *identity*).
+- The store, the fetch and the `validity` verdicts are astra-tools' own (design §4.3, §4.9). The specification doesn't say when a commit counts as got: astra-tools counts one that can be fetched or was kept from an earlier fetch.
 
 ## 3. A remote that serves partial clones, and what astra-tools reads
 
@@ -171,7 +171,7 @@ What to notice:
 - The store is at the same path: `cache clear` removed it, and `validate` made it again. With the filter honoured, the fetch brings commits and trees only.
 - `validate` reads one blob, noisy-line's `astra.yaml` at 2dcf20f. It never opens `config.json`: `MISSING_INPUT_FILE` and `INPUT_NOT_TRACKED` at a commit need only the entry's mode in the commit's tree.
 - `check` reads three more: `points`'s record (its record status), `config.json` (`STALE_RESULT` compares the content of the input at 2dcf20f with what the record lists), and `points.csv` (the fits read it, so it gets a bytes status).
-- `src/make_points.py` stays at the remote. The code is recorded by its commit and never compared ([§20 *When a result is unchanged*](https://astra-spec.org/0.1/specification/#when-a-result-is-unchanged)).
+- `src/make_points.py` stays at the remote. The code is recorded by its commit and never compared ([Results](https://astra-spec.org/0.1/specification/#results) *made from*).
 - `uploadpack.allowFilter` stays set for the rest of the chapter, so the store behaves from here as one fetched from GitHub would.
 
 Under the hood:
@@ -232,9 +232,9 @@ x,y
 
 What to notice:
 - `info` names each analysis by its file and, for one read at a commit, the commit and the URL it came from. Nothing there says which repository holds the root.
-- `points` is planned, since the fits read it, but is never built here: "read through its record at 2dcf20f". Its record and bytes places are noisy-line's, at that commit ([§17 *Using one*](https://astra-spec.org/0.1/specification/#using-one)).
+- `points` is planned, since the fits read it, but is never built here: "read through its record at 2dcf20f". Its record and bytes places are noisy-line's, at that commit ([Results](https://astra-spec.org/0.1/specification/#results) *results from a commit*).
 - The fits' command writes the input as `2dcf20f…:results/points.csv`, git's name for a file at a commit. It names a file in the store: line-fit's repository has no such commit. A runner substitutes the path of the bytes it got (`examples/run.py` gets them with `history.get`).
-- In the JSON, `owner` is an identity, a folder and a commit, with no URL: a URL says only where to get the commit ([§17 *Identity*](https://astra-spec.org/0.1/specification/#identity)). `read_only` is true for `points`. Each input read at a commit carries that commit, and `result` is the index of the planned result it reads.
+- In the JSON, `owner` is an identity, a folder and a commit, with no URL: a URL says only where to get the commit ([Elements](https://astra-spec.org/0.1/specification/#elements) *identity*). `read_only` is true for `points`. Each input read at a commit carries that commit, and `result` is the index of the planned result it reads.
 
 Under the hood:
 - `info` heads each member with `file_named` (`src/astra/cli/text/info.py:16`, `src/astra/cli/text/__init__.py:23-29`), from the `Location` that `Stack.location` builds with the member's commit and URL (`src/astra/stack.py:213-219`), and prints each declaration's row through `_reached` (`info.py:42`), which names the member it reached the same way. It checks nothing: it exits 1 only where there is no stack to show (the root's file isn't a valid document, or the root is in no repository), so an unreachable declaration still exits 0, shown as "nothing (unreachable)".
@@ -244,7 +244,7 @@ Under the hood:
 
 ## 5. Three forms of declaration, three ways of reading
 
-[§17](https://astra-spec.org/0.1/specification/#17-analyses-from-another-commit-or-repository)'s table has three forms. Add the two line-fit lacks, by `path` and by `path` and `commit`, both naming line-fit's own folder (§17's *Earlier results* pattern), and see how each is read.
+A declaration names an analysis by `path`, by `path` and `commit`, or by `url` and `commit` ([Elements](https://astra-spec.org/0.1/specification/#elements) *declare*). Add the two forms line-fit lacks, by `path` and by `path` and `commit`, both naming line-fit's own folder (as the specification's `previous` does), and see how each is read.
 
 ```console
 $ sed -i "/^analyses:/a\\  before: {path: ., commit: \"$(git rev-parse 'HEAD~8')\"}" astra.yaml
@@ -295,7 +295,7 @@ $ git checkout -q astra.yaml
 ```
 
 What to notice:
-- `here` reaches `astra.yaml`, the root itself: same folder, also in the working tree, so the same identity, and it isn't read again. An address through it is another spelling of a root element ([§15 *One analysis, however it is declared*](https://astra-spec.org/0.1/specification/#one-analysis-however-it-is-declared)).
+- `here` reaches `astra.yaml`, the root itself: same folder, also in the working tree, so the same identity, and it isn't read again. An address through it is another spelling of a root element ([Elements](https://astra-spec.org/0.1/specification/#elements) *identity*).
 - `before` is read at aca519e in line-fit's own repository, so no "from". It declares noisy-line at 2c5197a, step 1's build, and `info` lists that as a fourth analysis: same folder, another commit, another analysis.
 - The store still has one ref. 2c5197a is an ancestor of 2dcf20f, fetched with it in step 3, so it counts as got and nothing is fetched.
 - `validity` has three verdicts now, one for each analysis from a commit. `hashes` has three entries: line-fit's three result files, hashed by step 3's `check`. Had that `check` run within two seconds of the setup's last build, `hashes` would be missing here (`hashing.py:60`); run by hand, it never is.
@@ -312,7 +312,7 @@ Under the hood:
 
 ## 6. Stand-ins, briefly
 
-[§7](https://astra-spec.org/0.1/specification/#7-inputs) lets an input's path hold a stand-in that "the validator recognises". Which stand-ins count is astra-tools' choice (design §4.5). Chapter 4's step 9 put a Git LFS pointer in an input's place; here the same on noisy-line's `config.json`, then a DVC file, both uncommitted.
+[Elements](https://astra-spec.org/0.1/specification/#elements) lets a *stand-in* take an input's place "where a tool recognises it". Which stand-ins count is astra-tools' choice (design §4.5). Chapter 4's step 9 put a Git LFS pointer in an input's place; here the same on noisy-line's `config.json`, then a DVC file, both uncommitted.
 
 ```console
 $ cd ../noisy-line
@@ -349,10 +349,10 @@ $ cd ../line-fit
 ```
 
 What to notice:
-- With a Git LFS pointer that gives `config.json`'s real hash and size in its place, `points` stays `unchanged`. `STALE_RESULT` compares the content, never what stands in for it, and the pointer gives the content's hash ([§20 *The rules*](https://astra-spec.org/0.1/specification/#20-checking-results)).
+- With a Git LFS pointer that gives `config.json`'s real hash and size in its place, `points` stays `unchanged`. `STALE_RESULT` compares the content, never what stands in for it, and the pointer gives the content's hash ([Results](https://astra-spec.org/0.1/specification/#results) *made from*).
 - Change the pointer's size to 102 and `points` is `stale`. astra-tools takes the pointer's word for the content: its oid and size are the digest compared, both at once (`hashing.Digest`, `hashing.py:30`), and nothing is fetched to check them. Size 102 names other content, so the content counts as changed, though the data didn't.
 - With a DVC file beside the path and `config.json` gone, the analysis is valid: `MISSING_INPUT_FILE` accepts the stand-in, and `INPUT_NOT_TRACKED` the tracked `config.json.dvc`. The "DVC file" is only `config.json` renamed: astra-tools recognises one by its name alone (`standins.py:130-132`).
-- The checker asks only stand-ins kept at the path itself, so it never asks DVC. `config.json` is gone, so there is nothing to hash, and the result is `stale`, never `unchanged`, as §20 requires where an input's content can't be read or sits behind a stand-in that gives no hash ([§20 *When a result is unchanged*](https://astra-spec.org/0.1/specification/#when-a-result-is-unchanged)). The same holds for any stand-in kept beside the path, built-in or registered: the checker never asks it for a hash, whatever its `gives` returns, so with no file at the path its result can only be stale. That is astra-tools' choice (the `_content` docstring, `check.py:510-513`).
+- The checker asks only stand-ins kept at the path itself, so it never asks DVC. `config.json` is gone, so there is nothing to hash, and the result is `stale`, never `unchanged`, as the specification requires where an input is behind a stand-in that gives no hash ([Results](https://astra-spec.org/0.1/specification/#results) *made from*). The same holds for any stand-in kept beside the path, built-in or registered: the checker never asks it for a hash, whatever its `gives` returns, so with no file at the path its result can only be stale. That is astra-tools' choice (the `_content` docstring, `check.py:510-513`).
 - astra-tools runs neither git-lfs nor dvc, and fetches nothing a stand-in stands for.
 
 Under the hood:
@@ -363,7 +363,7 @@ Under the hood:
 
 ## 7. History: a record's versions
 
-`astra history` reads what git holds of each planned result's records, on demand. It is astra-tools' own, beyond the specification (design §6 *Phase 4*), built on records ([§19](https://astra-spec.org/0.1/specification/#19-records)) and their places ([§18](https://astra-spec.org/0.1/specification/#18-results-and-where-they-go)).
+`astra history` reads what git holds of each planned result's records, on demand. It is astra-tools' own, beyond the specification (design §6 *Phase 4*), built on records and their places ([Results](https://astra-spec.org/0.1/specification/#results) *record*, *place*).
 
 ```console
 $ astra history timeline 'fit#huber'
@@ -520,7 +520,7 @@ What to notice:
 
 Under the hood:
 - `find` (`history.py:119-138`) takes exactly one of `--hash` and `--environment` (`src/astra/cli/history.py:105`).
-- The CLI splits `ADDR@REV` at the first `@`, since an address holds none (`cli/history.py:122`, Annex C).
+- The CLI splits `ADDR@REV` at the first `@`, since an address holds none (`cli/history.py:122`; Elements *address*).
 - `History.get` (`history.py:140-167`): `REV` through `git rev-parse --verify <rev>^{commit}` in the repository that holds the result's analysis (`history.py:149`, `git.py:118-127`); the record read and its `address` compared (`history.py:153-156`); the bytes' entry, which must be a file in git (`history.py:158`); their hash and size against the record (`history.py:163`). The CLI writes the bytes as they are (`cli/history.py:127`).
 - Exit codes: `_answering` (`cli/history.py:32-47`) turns `InvalidAnalysisError` and `NotInHistoryError` into 1, and `RequestError` into a usage error, 2.
 
@@ -581,7 +581,7 @@ $ git checkout -q astra.yaml
 ```
 
 - Valid: 18cfe9d is in the store already, an ancestor of 2dcf20f, and nothing compares a `url` declaration's commit with anything (`COMMIT_NOT_ANCESTOR` is only for `path` and `commit`).
-- At 18cfe9d, `points` is unchanged: its record there was made at 2288818, and nothing it depends on changed between the two. The fits are stale because their records list the hash of the points at 2dcf20f: "made again since, with other bytes than it read" (`check.py:506`). The wording assumes a newer build, though the declaration moved back to an older one: astra-tools compares only the two digests, so an older build gives the same message. The check rules on a read-only result are §20's *Results of an analysis from a commit*.
+- At 18cfe9d, `points` is unchanged: its record there was made at 2288818, and nothing it depends on changed between the two. The fits are stale because their records list the hash of the points at 2dcf20f: "made again since, with other bytes than it read" (`check.py:506`). The wording assumes a newer build, though the declaration moved back to an older one: astra-tools compares only the two digests, so an older build gives the same message. A result from a commit is checked between the commit its record names and the declared one ([Results](https://astra-spec.org/0.1/specification/#results), in the paragraph on *present*).
 - `lineage` resolves `points` against today's plan, where its one version is now at 18cfe9d, with another hash. So no version gives what the fit's record lists.
 - At 2288818, `points`'s record is step 1's, made at c94c7b0 from 30 points, while `config.json` at 2288818 asks for 60: `points` itself is stale, and the fits read a stale result (`check.py:503`). A runner would refuse to build from it (`STALE_INPUT`).
 

@@ -75,7 +75,7 @@ exit 2
 What to notice:
 
 - `valid` isn't stored: it is "no diagnostic is an error". Warnings never change it
-  ([§4](https://astra-spec.org/0.1/specification/#4-conformance)).
+  ([Rules](https://astra-spec.org/0.1/specification/#rules) *valid*).
 - `unchecked` is empty: this build checks every validator code (step 7).
 - The shape `astra-validation-report/1` and the exit codes are astra-tools' own (design §4.11,
   §4.12; chapter 1, steps 2 and 3): 0 valid, 1 a `MUST` broken, 2 when there is nothing to
@@ -99,9 +99,8 @@ Under the hood:
 
 ## 2. The parse layer: YAML that isn't, and a top level that isn't a map
 
-A file is read before it is judged
-([Annex A](https://astra-spec.org/0.1/specification/#a-reading-files): YAML 1.2, core schema,
-content a map; `INVALID_SYNTAX`). Break it as YAML, then as a map.
+A file is read before it is judged (YAML 1.2, core schema, content a map: `INVALID_SYNTAX`).
+Break it as YAML, then as a map.
 
 ```console
 $ perl -pi -e 's/inputs: \[config\]/inputs: [config/' astra.yaml
@@ -143,7 +142,7 @@ What to notice:
 
 - One diagnostic each time: a file that breaks a parse rule is checked no further (design §4.13
   case 1). The schema never sees it.
-- The pointer is `""`: Annex D reports a parse code for the whole file. The line and column are
+- The pointer is `""`: a parse code is reported for the whole file. The line and column are
   astra-tools' extra, the loader's *problem* mark: where it noticed, the `:` after `recipe` on
   line 18, not where the `[` opened on line 17.
 - The list is valid YAML, so the loader raises nothing: astra-tools tests the top node itself,
@@ -171,7 +170,7 @@ Under the hood:
 ## 3. The schema layer: pointer, line, column, key
 
 A file that parses is checked against `analysis.schema.json`
-([Annex D](https://astra-spec.org/0.1/specification/#d-the-schema-files-and-rulesjson)). Five
+([Schema files](https://astra-spec.org/0.1/specification/#schema-files)). Five
 breaks, five codes: an empty list and an empty map share one.
 
 ```console
@@ -216,11 +215,12 @@ What to notice:
 - One typo, two rules: `UNKNOWN_FIELD` for `comand` and `MISSING_FIELD` for `command`, as
   `recipie` gave in chapter 1's step 2. Both subjects are determined, so both are reported (the
   opening paragraph of design §4.13; only a file's parse rules are exempt).
-- The places are Annex D's: an unknown field at its object, naming the field
-  (`"key":"comand"`); an error on a key at its map, naming the key (`INVALID_ID` at `/outputs`,
-  `"key":"Points"`); every other error at the value that fails.
-- The line and column are astra-tools': the key's node where a key is named, otherwise the
-  value's node. A block map's node starts at its first key, so `MISSING_FIELD` on `recipe` is at
+- The places are astra-tools' (design §3, *Where*); the specification doesn't place a schema
+  error. An unknown field is at its object, naming the field (`"key":"comand"`); an error on a
+  key at its map, naming the key (`INVALID_ID` at `/outputs`, `"key":"Points"`); every other
+  error at the value that fails.
+- So are the line and column: the key's node where a key is named, otherwise the value's
+  node. A block map's node starts at its first key, so `MISSING_FIELD` on `recipe` is at
   19:7, the `comand` line, not at `recipe:` on line 18. An empty flow map's starts at its `{`:
   9:10.
 - `inputs: []` and `outputs: {}` are both `EMPTY_COLLECTION`, from two keywords: `minItems` on
@@ -247,7 +247,9 @@ Under the hood:
 ## 4. From an error to its code
 
 The code isn't in the error: it is looked up in `rules.json`'s `errors`, keyed by the error's
-absolute keyword location (Annex D *The rule catalogue*). `judge.py` shows the lookup.
+absolute keyword location: `rules.json` gives "the code of each schema keyword whose error can
+fail a file" ([Schema files](https://astra-spec.org/0.1/specification/#schema-files)).
+`judge.py` shows the lookup.
 
 ```console
 $ perl -pi -e 's/      command:/      comand:/' astra.yaml
@@ -287,7 +289,7 @@ What to notice:
   Step 3's empty map is `…#/properties/outputs/minProperties`, its empty list
   `…#/$defs/Output__identifier_optional/properties/inputs/minItems`.
 - The `$id` says `/dev/`, as chapter 1's step 6 showed: a release's say `/0.1/`, so each key
-  names its minor version (Annex D *URIs*).
+  names its minor version ([Schema files](https://astra-spec.org/0.1/specification/#schema-files)).
 - 296 locations, every one a schema-layer code. The map is many to one: every `type` keyword is
   `WRONG_TYPE`, every `required` outside an `allOf` check `MISSING_FIELD`, and so is the one
   inside the check that an output other than a switch has a `type`, a `format` and a `recipe`. A
@@ -386,10 +388,9 @@ Under the hood:
 
 ## 6. The validator layer: the stack and git
 
-Now break what only the validator sees: files on disk and in git
-([§7](https://astra-spec.org/0.1/specification/#7-inputs)), addresses
-([§6](https://astra-spec.org/0.1/specification/#6-names)), and the outputs' graph
-([§10](https://astra-spec.org/0.1/specification/#10-outputs)).
+Now break what only the validator sees: files on disk and in git (`MISSING_INPUT_FILE`,
+`INPUT_NOT_TRACKED`), addresses (`UNRESOLVED_ADDRESS`), and the outputs' graph
+(`OUTPUT_CYCLE`).
 
 ```console
 $ perl -pi -e 's/path: config.json/path: settings.json/' astra.yaml && astra validate
@@ -436,9 +437,8 @@ What to notice:
 
 - `MISSING_INPUT_FILE` alone: a file that isn't there is never also reported as untracked
   (design §4.13 case 8).
-- Tracked means in the index: staging the file is enough, with no commit
-  ([Annex B](https://astra-spec.org/0.1/specification/#b-paths-and-git) *Tracked*). Chapter 1's
-  Try 3 took the same three steps on the scaffold.
+- Tracked means in the index: staging the file is enough, with no commit. Chapter 1's Try 3
+  took the same three steps on the scaffold.
 - `noisy.point` is resolved through the declaration, in noisy-line's `astra.yaml` at
   `2dcf20f…`, read from the commit astra-tools fetched into its cache; that file has no
   `point`.
@@ -450,8 +450,8 @@ What to notice:
   astra-tools reads "once" as "by no other rule" (`src/astra/rules/outputs.py:11`: "reported as
   `OUTPUT_CYCLE` alone"). That is its reading, not the design's words, which could be reworded
   to match.
-- The rule modules: one per section of Part II whose codes table states them (design §4.4),
-  each declaring the codes it reports.
+- The rule modules: one per section of the long specification whose codes table states them
+  (design §4.4), each declaring the codes it reports.
 
 Under the hood:
 
@@ -459,8 +459,8 @@ Under the hood:
   `Context`; `commits` runs first, since its findings decide which of the others' get a related
   declaration (59-61).
 - `Context` (`src/astra/rules/context.py`) computes what `universes.py` derives once each, as
-  `cached_property`s (50-154), and holds the §4.13 predicates the rules consult before reporting
-  (156-209).
+  `cached_property`s (50-154), and holds the design §4.13 predicates the rules consult before
+  reporting (156-209).
 - `inputs._inputs` (`src/astra/rules/inputs.py:43-76`) asks git once for every input's path
   (54; one `git ls-files --stage`, `src/astra/sources/git.py:91`), then per input: `_no_file`
   (62) gives `MISSING_INPUT_FILE` (64), and only otherwise `INPUT_NOT_TRACKED` (65-73).
@@ -472,8 +472,9 @@ Under the hood:
 
 ## 7. Errors and warnings, astra-tools' own codes, `unchecked`
 
-The level comes from the catalogue: a `MUST` broken is an error, a `SHOULD` a warning (§4).
-Then the three codes that aren't the specification's, and what `unchecked` counts.
+The level comes from the catalogue: a `MUST` broken is an error, a `SHOULD` a warning
+([Rules](https://astra-spec.org/0.1/specification/#rules)). Then the three codes that aren't the
+specification's, and what `unchecked` counts.
 
 ```console
 $ astra validate ../../two-names; echo "exit $?"
@@ -502,13 +503,13 @@ $ python -c 'from astra.diagnostics import Catalogue; from astra.validate import
 What to notice:
 
 - `RESULT_IN_TWO_PLACES` is a `SHOULD`
-  ([§16](https://astra-spec.org/0.1/specification/#16-driving-and-consuming)): a warning, the
+  ([Rules](https://astra-spec.org/0.1/specification/#rules)): a warning, the
   analysis stays valid, exit 0. `astra plan` shows the same fact as a `two_names` note, which is
   no diagnostic (design §4.6).
 - It is reported at the first declaration of each chain that the other doesn't go through
   (here, where each chain starts), the other's as `related`
-  (`src/astra/rules/driving.py:291-294`). Where a breach goes beyond Annex D is astra-tools'
-  own (design §3).
+  (`src/astra/rules/driving.py:291-294`). Where a breach is reported is astra-tools' own
+  (design §3).
 - astra-tools' own three codes are listed apart, with their levels (design §3, `diagnostics.py`;
   chapter 1's step 6 met them). The first two are errors because without them the stack can't
   be read.
@@ -518,9 +519,8 @@ What to notice:
   locally.
 - `unchecked` is the catalogue's validator codes (31 from `rules.json`, 3 of astra-tools') that
   no module declares: none in this build (chapter 1, step 2). It describes the build, not the
-  analysis. A rule that
-  §4.13 leaves unchecked on one subject is listed nowhere: it simply isn't reported, as in steps
-  5 and 6.
+  analysis. A rule that design §4.13 leaves unchecked on one subject is listed nowhere: it
+  simply isn't reported, as in steps 5 and 6.
 
 Under the hood:
 
@@ -541,9 +541,9 @@ Under the hood:
 
 ## 8. Records: the same two layers, behind `INVALID_RECORD`
 
-A record ([§19](https://astra-spec.org/0.1/specification/#19-records)) is read by the same
-`load` and `contract`, but the checker reports what it breaks as `INVALID_RECORD`, which leaves
-the result `missing` ([§20](https://astra-spec.org/0.1/specification/#20-checking-results)).
+A record ([Results](https://astra-spec.org/0.1/specification/#results) *record*) is read by the
+same `load` and `contract`, but the checker reports what it breaks as `INVALID_RECORD`, which
+leaves the result `missing` ([Rules](https://astra-spec.org/0.1/specification/#rules)).
 
 ```console
 $ cd ../noisy-line
@@ -589,7 +589,7 @@ What to notice:
 - A record's diagnostic has a pointer but no line or column, so the text shows no place. Only a
   JSON syntax error, from `json.loads`, would have one.
 - `committed` is false: HEAD's record isn't, byte for byte, the one on disk.
-- `0.0.9` has no record schema (records begin at 0.1, §4 *checker*), so it is
+- `0.0.9` has no record schema (records begin at 0.1), so it is
   `INVALID_RECORD` itself, with no `breaks`.
 - `ABSENT_RESULT` is a check-layer `SHOULD`: a warning, and exit 0. `astra check`'s verdict
   looks at record statuses and errors, never at bytes.
@@ -697,10 +697,10 @@ astra.yaml: invalid, 1 error(s), 0 warning(s)
 $ git checkout -q astra.yaml
 ```
 
-- `EMPTY_COLLECTION` covers `outputs`, `Decision.options`, `Insight.evidence` and lists of
-  strings ([§5](https://astra-spec.org/0.1/specification/#5-the-astrayaml-file)), not
-  `inputs`, so the file is a valid document. The schema has a `minProperties` on `outputs`
-  (step 3's `outputs: {}`) and none on `inputs`.
+- `EMPTY_COLLECTION` covers `outputs`, `options`, `cases`, `evidence` and every list of
+  strings (its row in [Rules](https://astra-spec.org/0.1/specification/#rules)), not `inputs`,
+  so the file is a valid document. The schema has a `minProperties` on `outputs` (step 3's
+  `outputs: {}`) and none on `inputs`.
 - The validator then finds that `points`' entry `config` names nothing (13:14, the file is
   four lines shorter). The command's `{inputs.config}` still matches that entry as written, so
   no `UNDECLARED_TEMPLATE_REF`.
@@ -781,11 +781,10 @@ $ git checkout -q .astra/records/points.json && git status --short
 - At 0.1.0 the closed record schema refuses `note`: `missing`, at pointer `""` with key
   `note`, so no place in the text.
 - At 0.2.0 the checker reads it by the open variant of its own record schema
-  ([§19](https://astra-spec.org/0.1/specification/#19-records), the paragraph "A record holds
-  only the fields its `spec_version` defines"; the open variant itself is
-  [Annex D](https://astra-spec.org/0.1/specification/#d-the-schema-files-and-rulesjson)'s),
-  and `Record.from_json` drops what 0.1 doesn't define (`src/astra/records.py:86-104`).
-  Nothing compared has changed, so `unchanged`, but the file isn't HEAD's: `not committed`.
+  (`INVALID_RECORD`; the open variant is `provenance.open.schema.json`,
+  [Schema files](https://astra-spec.org/0.1/specification/#schema-files)), and
+  `Record.from_json` drops what 0.1 doesn't define (`src/astra/records.py:86-104`). Nothing
+  compared has changed, so `unchanged`, but the file isn't HEAD's: `not committed`.
 
 </details>
 
@@ -794,10 +793,12 @@ $ git checkout -q .astra/records/points.json && git status --short
 - Each file passes three layers in order, and each gates the next: a parse error stops the file
   (`load.py`), a schema error or `UNSUPPORTED_SPEC_VERSION` keeps the validator out of it and
   leaves its analysis undetermined (`stack.bind`), and only then do the rule modules judge the
-  whole stack with git (`rules/`, one module per section).
+  whole stack with git (`rules/`, one module per subject).
 - A schema code is a lookup: the failing subschema's pointer, found by object identity, plus
-  the keyword, in `rules.json`'s `errors`. Annex D fixes the code, the pointer and the key; the
-  line and column, the words, the order, the exit codes and the JSON shapes are astra-tools'.
+  the keyword, in `rules.json`'s `errors`, which fixes the code
+  ([Schema files](https://astra-spec.org/0.1/specification/#schema-files)); the place (the
+  pointer and the key, design §3), the line and column, the words, the order, the exit codes
+  and the JSON shapes are astra-tools'.
 - Error or warning comes only from the catalogue's `MUST` or `SHOULD`; the three codes outside
   it are astra-tools' own, in `diagnostics.OWN`.
 - `unchecked` lists the codes a build doesn't implement (none now). Design §4.13 is a different

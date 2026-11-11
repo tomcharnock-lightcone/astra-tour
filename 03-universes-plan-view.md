@@ -25,10 +25,10 @@ $ cd work/03/readings
   `nix shell 'nixpkgs#jq'`, then `source env.sh` in that shell.
 - Every step runs in `work/03/readings`. The steps and exercises that edit `astra.yaml` end
   with `git checkout --quiet astra.yaml`.
-- Switches aren't in the long specification. For them, and for what a universe uses, this
-  chapter cites the short one, `repos/astra-spec-pinned/docs/specification.md`, as astra-tools'
-  code does: a section, then the term it defines in bold there, such as Elements *switch* or
-  Results *uses*.
+- Like every chapter, this one cites the published specification, as the README's *Citations*
+  says: a rule by its code, anything else by a section, then the term it defines in bold there if
+  it defines one, such as Elements *switch* or Results *uses*. Switches aren't in the long
+  specification that astra-tools' code cites by `§n`.
 
 ## 1. The analysis
 
@@ -128,7 +128,7 @@ astra.yaml: valid, 0 error(s), 0 warning(s)
 
 What to notice:
 
-- Three decisions ([§8](https://astra-spec.org/0.1/specification/#8-decisions-and-options)):
+- Three decisions ([Elements](https://astra-spec.org/0.1/specification/#elements) *decision*):
   `spikes`; `centre`, whose `mean` `requires` `spikes.drop` and whose `mode` is `excluded`; and
   `cut`. None is conditional: whether a universe uses `cut` follows from what is planned there
   (step 3).
@@ -148,7 +148,8 @@ What to notice:
   `trimmed` and writes one key.
 - The commands use every placeholder form: `{inputs.<entry>}`, `{decisions.<entry>}`,
   `{inputs}`, `{output}`, and `{{ }}` for literal braces
-  ([§11](https://astra-spec.org/0.1/specification/#11-recipes)).
+  ([Elements](https://astra-spec.org/0.1/specification/#elements) *placeholders*,
+  `UNDECLARED_TEMPLATE_REF`).
 
 Under the hood:
 
@@ -344,7 +345,7 @@ Under the hood:
 
 ## 4. The plan, as text
 
-The planned results ([§18](https://astra-spec.org/0.1/specification/#18-results-and-where-they-go)),
+The planned results ([Results](https://astra-spec.org/0.1/specification/#results) *plans*),
 each with its places and the command that makes it.
 
 ```console
@@ -399,12 +400,13 @@ What to notice:
   and `comparison`, once, which reads `summary` in each universe and, through the case it takes
   there, `plain#mean`, `trimmed_mean#trimmed` and `plain#median`. `trimmed_mean` would be built
   in `mean` too, but nothing there reads it.
-- Places (§18 *Where records and bytes go*): the record at `.astra/records/{universe}/{name}.json`
+- Places (Results *place*, *default place*): the record at `.astra/records/{universe}/{name}.json`
   and the bytes at their default place, `results/{universe}/{name}.{format}`; for `comparison`,
   built once, neither has a `{universe}`. Paths are from the top of the repository, which is
   the analysis's folder here.
-- `run in .` is the analysis's folder (§11). A result of an analysis from a commit has
-  `read through its record at <commit>` instead, and no command (chapter 5's step 4 shows one).
+- `run in .` is the analysis's folder (Elements *recipe*). A result of an analysis from a commit
+  has `read through its record at <commit>` instead, and no command (chapter 5's step 4 shows
+  one).
 - Each result comes after what it reads. The plan takes the results in the order it reaches
   them, `clean` in each universe, then `comparison`, and puts each after what it reads: here,
   `comparison`'s three, in the order of its `inputs`, before `comparison`. Step 6 shows another
@@ -414,7 +416,8 @@ What to notice:
   option to give.
 - In `comparison`, `{inputs}` is the three pinned paths in the order of `inputs`: each
   `summary#<universe>` gives the bytes of the case `summary` takes in that universe. And
-  `'{{:.2f}}'` became `'{:.2f}'`. Nothing is quoted for the shell: §11 says verbatim.
+  `'{{:.2f}}'` became `'{:.2f}'`. Nothing is quoted for the shell: Elements *placeholders* says
+  verbatim.
 - The exit code is 0. With a `MUST` broken, `astra plan` prints the validation report instead and
   exits 1 (Try 1 to 3): there is no plan of an invalid analysis. The exit codes are astra-tools'
   own (design §4.12; chapter 1, step 3). For `universe show` and `view`, an unknown universe is
@@ -488,8 +491,8 @@ What to notice:
 - `not_built` is the plan's report of a missing case: an output reached in a universe where a
   switch on the way has no case for the option selected there isn't built there. That breaks no
   rule (Elements *switch*), so the plan says where, and which switch and option (Try 4).
-- `outside_folder` names `CODE_OUTSIDE_ANALYSIS`, a runner rule of
-  [§21](https://astra-spec.org/0.1/specification/#21-runners) that no validator checks; the note
+- `outside_folder` names `CODE_OUTSIDE_ANALYSIS`, a runner rule
+  ([Rules](https://astra-spec.org/0.1/specification/#rules)) that no validator checks; the note
   is astra-tools reading the command as text. It has a location (41:16, the command's value); the
   notes about results (`same_computation`, `two_names`) have none.
 - The text counts and lists only notes about what this root builds (`built`); the JSON lists all
@@ -561,10 +564,11 @@ Under the hood:
 - `src/astra/plan.py:711` `render_command`: `depth` and `top` (:732-733) find the checkout's top
   from `cwd` and the result's `workdir`, since every path in the plan is from that top; `path`
   (:736) makes each relative to `cwd` or absolute.
-- `_TEMPLATE` (`src/astra/plan.py:706`) reads `{{`, `}}` and `{…}` from the left, as §11 says.
-  `fill` (:747): a brace pair (:749-750), `{output}` as the first name's bytes (:751-752),
-  `{inputs}` joined by spaces (:753-754), `{inputs.<entry>}` (:755-757), and
-  `{decisions.<entry>}` as `result.decisions[entry]` (:758), which a valid stack always fills.
+- `_TEMPLATE` (`src/astra/plan.py:706`) reads `{{`, `}}` and `{…}` from the left, as
+  `UNDECLARED_TEMPLATE_REF` says. `fill` (:747): a brace pair (:749-750), `{output}` as the
+  first name's bytes (:751-752), `{inputs}` joined by spaces (:753-754), `{inputs.<entry>}`
+  (:755-757), and `{decisions.<entry>}` as `result.decisions[entry]` (:758), which a valid stack
+  always fills.
 - `where` (:740-743): an entry read at a commit renders as `<commit>:<path>` unless `got=` gives
   where the runner put its bytes.
 - The validator scans braces with a regex of its own, `src/astra/rules/recipes.py:33`, which
@@ -654,8 +658,8 @@ What to notice:
   is `[]` for an entry that names no switch.
 - `decisions` gives each entry of the output's `decisions` the option selected in its universe:
   never `null` in a valid analysis, which sets every decision it uses.
-- `command` is the template. A consumer renders it with `render_command`, or must implement §11
-  itself.
+- `command` is the template. A consumer renders it with `render_command`, or must fill the
+  placeholders itself (Elements *placeholders*).
 - `read_only` and `run_at` matter only for analyses from a commit; `resources` only where a
   recipe asks for them.
 - A note gives its results by index, its location as a whole `Location` or `null`, `built`, and,
@@ -706,7 +710,7 @@ What to notice:
 
 - One block per analysis of the stack, the root first; here the root is the whole stack. `built`
   says whether the analysis is built in the universe: the root always is, a declared analysis
-  where the universe drives it (§16).
+  where the universe drives it (Elements *drives*).
 - `cut` is selected but not used in `median`: `p10  (unused)` is `used: false, selected: "p10"`.
   The view keeps the effective selection whole and says which keys matter. A decision neither
   selected nor used shows `unused`, and one used with nothing selected `no option selected`.
@@ -866,7 +870,7 @@ $ git checkout --quiet astra.yaml
   option.
 - The rule is checked for each selected option against its own constraints
   (`src/astra/rules/universes.py:213`), so it is reported once, on the option that carries
-  `incompatible_with`, though §8 makes the pair symmetric in meaning.
+  `incompatible_with`, though the pair is symmetric in meaning.
 - First, that option is `centre: winsorised`, which the universe sets itself: reported at its key
   (85:17).
 - Second, it is the inherited `spikes: drop`: reported at the universe's `derived_from` (84:19),
@@ -917,9 +921,9 @@ $ git checkout --quiet astra.yaml
 - A placeholder is checked against the output's own `inputs` and `decisions`, as written
   (`_gives`, `src/astra/rules/recipes.py:57`), not against the analysis's elements. `spikes`
   reaches `trimmed_mean` only through `clean`, and an output's `decisions` lists the decisions it
-  is made with directly ([§10](https://astra-spec.org/0.1/specification/#10-outputs)), so
-  `trimmed_mean` doesn't list it and has no `{decisions.spikes}`. Listing it would change no
-  result ([§13](https://astra-spec.org/0.1/specification/#13-pins-and-outputs-built-per-universe-or-once)).
+  is made with directly ([Elements](https://astra-spec.org/0.1/specification/#elements)
+  *output*), so `trimmed_mean` doesn't list it and has no `{decisions.spikes}`. Listing it would
+  change no result.
 - The error is at the command's value (57:16), not at the placeholder; the message names it.
 - `{{inputs.clean}}` is a literal `{inputs.clean}`: valid, and the recipe gets the text instead
   of the path to `clean`'s bytes. No rule says a command uses every entry of its `inputs`, so
@@ -1031,9 +1035,9 @@ $ git checkout --quiet astra.yaml
   order by `plan.visit`. An output a case names is planned only where something planned reads
   it. Names, addresses and places come from `universes.places`, and there is no plan of an
   invalid analysis.
-- `render_command` fills §11's placeholders verbatim, relative to the folder the recipe runs in or
-  absolute. `astra-plan/1` carries the template, read indices, the cases each read goes through
-  (`via`), and an option for every decision a result lists.
+- `render_command` fills the placeholders (Elements *placeholders*) verbatim, relative to the
+  folder the recipe runs in or absolute. `astra-plan/1` carries the template, read indices, the
+  cases each read goes through (`via`), and an option for every decision a result lists.
 - The notes are astra-tools' own, never diagnostics. `same_computation` follows computations
   through what results read, and `not_built` says where a missing case leaves an output unbuilt,
   and why.

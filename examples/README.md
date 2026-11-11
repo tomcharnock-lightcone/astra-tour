@@ -380,8 +380,8 @@ $ astra history get 'comparison@HEAD'
 `run.py` is a tiny runner built on astra-tools' API (`astra.api`, and the helpers in
 `astra.records`); lightcone-cli is the real one. It builds what the analysis needs, in the
 plan's order and each result once: every planned result that isn't `unchanged` and `present`,
-and everything that reads a result it has just built. It keeps the runner rules of the
-specification's §21. With every result unchanged, there is nothing to do:
+and everything that reads a result it has just built. It keeps the specification's runner
+rules. With every result unchanged, there is nothing to do:
 
 ```console
 $ python ../../run.py

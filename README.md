@@ -58,17 +58,20 @@ Things to know before step 1:
 - **Elided output.** The astra version string shows as `0.2.19.dev…`, and test timings as `…s`.
 - **jq.** `nix develop` puts jq on PATH. Where a chapter says to get it through
   `nix shell 'nixpkgs#jq'`, you can skip that.
-- **Citations.** `§n` and `Annex X` are the long specification, as astra-tools' code cites it:
-  astra-spec's tag `v0.1-long-spec`, which the clone has
-  (`git -C repos/astra-spec show v0.1-long-spec:docs/specification.md`). Its links to
-  astra-spec.org/0.1 name the long specification's anchors. The specification astra-tools runs
-  against is the short one, at `repos/astra-spec-pinned/docs/specification.md`: Elements,
-  Results, Rules and Schema files. The long one has no switches: for them, and for what a
-  universe uses and what is built where, the chapters cite the short one, a section and the
-  term it defines, such as Elements *switch* or Results *uses*. `design §n` is astra-tools'
-  `design/2026-11-07-v0.1-tooling-design.md`. `src/astra/<path>.py:<line>` points into
-  astra-tools at `30839ed`.
-  `examples/…` is the tour's copy of astra-examples.
+- **Citations.** The chapters cite the published specification,
+  [astra-spec.org/0.1/specification](https://astra-spec.org/0.1/specification/): the short
+  one, which astra-tools runs against, also at `repos/astra-spec-pinned/docs/specification.md`.
+  Its four sections, Elements, Results, Rules and Schema files, have no numbers. A chapter names
+  a rule by its code, such as `MISSING_DECISION`, which the Rules table states, and anything else
+  by a section, then the term it defines in bold there if it defines one, such as Elements
+  *switch*, Results *uses* or Rules *valid*, linking only the section (Schema files defines
+  none). A `§n` or `Annex X` in astra-tools' code and messages, as the chapters paste them, and
+  in the tour's own `record.py` and `examples/run.py`, is the long specification the short one
+  replaced, which astra-tools' code still cites: astra-spec's tag `v0.1-long-spec`, which the
+  clone has (`git -C repos/astra-spec show v0.1-long-spec:docs/specification.md`).
+  `design §n` is astra-tools' `design/2026-11-07-v0.1-tooling-design.md`.
+  `src/astra/<path>.py:<line>` points into astra-tools at `30839ed`. `examples/…` is the tour's
+  copy of astra-examples.
 - **The specification versus astra-tools.** Each chapter says which is which. These are
   astra-tools' own: the three own codes, the plan's notes, the four JSON shapes, the exit
   codes, the cache, and when a rule goes unchecked (design §4.13). Design §5 would list the
@@ -107,7 +110,7 @@ CLAUDE.md repeats.
 1 read         sources/ (paths git reader remote       every byte through a Reader: the working
      │         standins)  cache.py                     tree, or a commit by git cat-file
      ▼
-  load         load.py                                 bytes → JSON value + positions (Annex A)
+  load         load.py                                 bytes → JSON value + positions
      ▼
   contract     contract.py                             JSON Schema + rules.json `errors` → codes
      ▼

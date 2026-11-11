@@ -59,16 +59,16 @@ exit code 2
 
 What to notice
 
-- The file holds the two top-level fields the schema requires, `spec_version` and `outputs`
-  ([§5](https://astra-spec.org/0.1/specification/#5-the-astrayaml-file)), and one output with
-  the fields an output requires: `type`, `format`, and a `recipe` with its `command`.
+- The file holds the two top-level fields the schema requires, `spec_version` and `outputs`,
+  and one output with the fields an output requires: `type`, `format`, and a `recipe` with its
+  `command` (`MISSING_FIELD`).
 - `src/result.py` doesn't exist, and nothing says so: no validator rule and no plan note
-  checks that a recipe's code exists. `CODE_OUTSIDE_ANALYSIS`
-  ([§21](https://astra-spec.org/0.1/specification/#21-runners)) is a runner `SHOULD`. The
+  checks that a recipe's code exists. `CODE_OUTSIDE_ANALYSIS` is a runner `SHOULD`
+  ([Rules](https://astra-spec.org/0.1/specification/#rules)). The
   plan's `outside_folder` note covers only part of it, a path that climbs out of the folder or
   enters a nested analysis (Try 2), and never looks at whether the file exists or is tracked.
 - `'{output}'` is quoted in the template itself: placeholders are filled verbatim, with no
-  shell quoting ([§11](https://astra-spec.org/0.1/specification/#11-recipes)).
+  shell quoting ([Elements](https://astra-spec.org/0.1/specification/#elements) *placeholders*).
 - `git init` and nothing more: `astra.yaml` is untracked and HEAD has no commit. The branch
   name is whatever your git configuration says.
 - A second `init` refuses, exit 2, and leaves the file alone.
@@ -149,10 +149,10 @@ What to notice
   subjects are determined, so both are reported (design §4.13, its opening paragraph).
 - `MISSING_FIELD` sits at 4:5, not on line 3 where `result:` is written: a map's position is
   where its content starts. `UNKNOWN_FIELD` points at the object, `/outputs/result`, and names
-  the field in `key`; its line and column are the key's own. Annex D fixes the instance
-  location and the code, and that an unknown field is reported at its object, naming the field
-  ([Annex D](https://astra-spec.org/0.1/specification/#d-the-schema-files-and-rulesjson));
-  the line, column and message are astra-tools'.
+  the field in `key`; its line and column are the key's own. The code is the one `rules.json`
+  gives the failing keyword
+  ([Schema files](https://astra-spec.org/0.1/specification/#schema-files)); the place, at the
+  object and naming the field (design §3), the line, column and message are astra-tools'.
 - Diagnostics come sorted by file, line, column, then code. The text groups them by file.
 - Exit 1 because `valid` is false. A warning alone would leave exit 0.
 
@@ -220,7 +220,7 @@ What to notice
   diagnostic. It goes through `fail`, not click's `UsageError`, so no `Usage:` lines. PATH is
   the analysis's folder, and nothing is searched for, upwards or downwards.
 - `NOT_IN_REPOSITORY` has no `line:col`: it is about the folder, not a place in the file
-  ([§5](https://astra-spec.org/0.1/specification/#5-the-astrayaml-file)). The file is
+  ([Rules](https://astra-spec.org/0.1/specification/#rules)). The file is
   otherwise the valid scaffold. The parse and schema rules still run, and astra-tools'
   `UNSUPPORTED_SPEC_VERSION`, but no other validator rule is checked and no declaration is
   followed (design §4.13 case 11).
@@ -270,7 +270,8 @@ What to notice
 
 - `info` checks nothing. It binds the stack and prints each analysis, the root first (text
   only).
-- The places are [§18](https://astra-spec.org/0.1/specification/#18-results-and-where-they-go)'s:
+- The places are the specification's
+  ([Results](https://astra-spec.org/0.1/specification/#results) *place*, *default place*):
   `.astra/records/<name>.json` and `results/<name>.<format>`, with no universe segment because
   there are no universes.
 - `run in .` is `workdir: ""`: the analysis's folder, as a path from the repository's top.
@@ -444,8 +445,8 @@ What to notice
 - `astra` is one PEP 420 namespace in three portions, none with an `__init__.py`: astra-spec's
   installed data (`docs/llms.txt`, which `astra guide` prints), astra-spec's `schema` package,
   and astra-tools' modules. An `__init__.py` in any of them would hide the others.
-- `generated/` holds the five files of Annex D's table
-  ([Annex D](https://astra-spec.org/0.1/specification/#d-the-schema-files-and-rulesjson)).
+- `generated/` holds the five files of the specification's table
+  ([Schema files](https://astra-spec.org/0.1/specification/#schema-files)).
 - `$comment` says `dev`, and the `$id`s carry `/dev/`: astra-spec is installed from a source
   tree, not a release, whose files would carry `/0.1/`. The keys of `errors` carry the `$id`,
   so they follow it.
@@ -487,9 +488,9 @@ Each layer imports only from those before it (design §2):
 
 | Layer | Modules | What it does |
 |---|---|---|
-| foundations | `diagnostics.py`, `grammar.py`, `model.py` | locations, diagnostics and the catalogue; the forms of a name (Annex C); frozen dataclasses of the two documents |
+| foundations | `diagnostics.py`, `grammar.py`, `model.py` | locations, diagnostics and the catalogue; the forms of a name (Elements *id*, *address*, *reference*); frozen dataclasses of the two documents |
 | read | `sources/paths.py`, `sources/git.py`, `sources/reader.py`, `sources/remote.py`, `sources/standins.py`, `cache.py` | every byte through a `Reader`; git only through the `git` binary |
-| load | `load.py` | bytes to a JSON value with positions, as Annex A reads them; `INVALID_SYNTAX` |
+| load | `load.py` | bytes to a JSON value with positions; `INVALID_SYNTAX` |
 | contract | `contract.py` | JSON Schema 2019-09 and `rules.json`'s `errors`; `UNSUPPORTED_SPEC_VERSION` |
 | bind | `stack.py` | every analysis read once, every declaration followed, every address resolved: a `Stack` |
 | rules, plan, view | `universes.py`, `rules/`, `validate.py`, `plan.py`, `view.py` | functions of a `Stack` |
@@ -593,8 +594,8 @@ How `astra validate first` runs, call by call:
    (`src/astra/stack.py:288`).
 7. `rules.check(Context(stack, catalogue))` (`src/astra/validate.py:94`; defined at
    `src/astra/rules/__init__.py:55`) runs the eleven modules of `MODULES`
-   (`src/astra/rules/__init__.py:37`), one per section of Part II whose table states validator
-   rules (§6 to §8, §10 to §17; §5's `NOT_IN_REPOSITORY` is in `validate.py`). `commits` runs
+   (`src/astra/rules/__init__.py:37`), one per section of the long specification whose table
+   states validator rules (design §4.4; `NOT_IN_REPOSITORY` is in `validate.py`). `commits` runs
    first (`:59`), and `commits.related` adds the declarations that lead to a commit's file as
    related places to the other modules' diagnostics (`:61`).
 8. Duplicates go, the rest are sorted (`src/astra/validate.py:97` and `:98`), and the
@@ -712,8 +713,7 @@ What to notice
   stderr astra-tools captures and drops. `2>/dev/null` hides git's other warning, that the
   store is a partial clone.
 - `b26542c` needed no fetch and got no ref: the store already had it, as the parent of
-  `345e144`, and a kept commit counts as got
-  ([§17](https://astra-spec.org/0.1/specification/#17-analyses-from-another-commit-or-repository)).
+  `345e144`, and a kept commit counts as got.
   Here its blobs were there too, because `upstream` ignored the filter. From a remote that
   honours it, as GitHub does, the commit and its trees come without blobs, and a blob is
   fetched when it is first read, online, and never offline (Try 4 makes `upstream` honour
@@ -823,7 +823,7 @@ $ perl -pi -e 's/"0.1.7"/"0.1.0"/' first/astra.yaml
 - `"0.1"` is a string that breaks the version pattern: `INVALID_VALUE`, the schema's code.
 - `"0.1.7"` is valid: a file is read by the schema of its minor version, and any patch of 0.1
   is valid exactly when `0.1.0` is
-  ([§5](https://astra-spec.org/0.1/specification/#5-the-astrayaml-file)).
+  ([Rules](https://astra-spec.org/0.1/specification/#rules) *valid*).
 
 </details>
 
@@ -921,12 +921,11 @@ exit code 1
 
 - With no file, only `MISSING_INPUT_FILE`: an input with no file isn't checked by
   `INPUT_NOT_TRACKED` (design §4.13 case 8).
-- Tracked means in the index
-  ([Annex B](https://astra-spec.org/0.1/specification/#b-paths-and-git)), read with
-  `git ls-files --stage` (`src/astra/sources/git.py:91`). A staged file is enough, and HEAD
+- Tracked means in the index, read with `git ls-files --stage`
+  (`src/astra/sources/git.py:91`). A staged file is enough, and HEAD
   still has no commit.
 - The message names the stand-ins astra-tools recognises: Git LFS, git-annex and DVC
-  ([§7](https://astra-spec.org/0.1/specification/#7-inputs); design §4.5).
+  ([Elements](https://astra-spec.org/0.1/specification/#elements) *stand-in*; design §4.5).
 
 </details>
 
@@ -998,10 +997,12 @@ $ perl -pi -e "s/$(git -C upstream rev-parse HEAD~1)/$(git -C upstream rev-parse
   `src/astra/sources/remote.py:47`), so there is no `REMOTE_UNREACHABLE`. Its `astra.yaml`
   was never read, so its blob isn't there: `_blob` raises `FileNotFoundError`, an `OSError`,
   which `environment()` makes exit 2, with astra-tools' message and no diagnostic.
-- That is astra-tools' current handling, and the design doesn't name the case. §4.3 says only
-  that `--offline` fetches nothing. §17's "kept from an earlier fetch" could as well be read
-  so that a commit kept without the blobs it needs isn't got, which would make it a
-  `REMOTE_UNREACHABLE`. A gap in the design, not something derived from it.
+- That is astra-tools' current handling, and the design doesn't name the case. Design §4.3 says
+  only that `--offline` fetches nothing, and the specification doesn't say when a commit counts
+  as got. "A commit kept from an earlier fetch counts as got", in the docstring of
+  `src/astra/sources/remote.py`, could as well be read so that a commit kept without the blobs
+  it needs isn't got, which would make it a `REMOTE_UNREACHABLE`. A gap in the design, not
+  something derived from it.
 
 </details>
 

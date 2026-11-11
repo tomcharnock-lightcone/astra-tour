@@ -155,7 +155,7 @@ What to notice:
   property: no diagnostic at level `error`. `unchecked` is empty: every validator code of
   rules.json has its check.
 - An analysis is known by its `Identity`, a folder and a commit
-  ([§17](https://astra-spec.org/0.1/specification/#17-analyses-from-another-commit-or-repository)).
+  ([Elements](https://astra-spec.org/0.1/specification/#elements) *identity*).
   noisy-line, read at its commit, is `. at 2dcf20f…`, its `astra.yaml` being at its
   repository's top. The URL it came from is on its `Member`, not in its identity.
 - `stack.resolutions` is every address of every valid file, resolved once, at binding. `field`
@@ -226,10 +226,10 @@ What to notice:
 - Each `Read` holds the entry as written, a path and the commit it is read at: `noisy.points`
   reads `results/points.csv` at 2dcf20f, not in line-fit's checkout.
 - `decisions` maps each entry of the output's `decisions` to the option its universe selects.
-- `command` is the template. `render_command` fills it as
-  [§11](https://astra-spec.org/0.1/specification/#11-recipes) says, with no shell quoting. An
-  entry read at a commit is written `<commit>:<path>` unless `got=` says where the runner put
-  its bytes. Paths are relative to `cwd`, the folder the recipe runs in, or absolute.
+- `command` is the template. `render_command` fills it as the specification says
+  ([Elements](https://astra-spec.org/0.1/specification/#elements) *placeholders*), with no shell
+  quoting. An entry read at a commit is written `<commit>:<path>` unless `got=` says where the
+  runner put its bytes. Paths are relative to `cwd`, the folder the recipe runs in, or absolute.
 - `universes=["huber"]` keeps what is built in `huber` and what it reads: `comparison`, built
   once, goes. `outputs=["comparison"]` asks for an output and pulls in what it reads.
 - `notes` is empty here. The notes (`fallback_pin`, `two_names`, `unplanned`, `not_built`,
@@ -272,11 +272,13 @@ The stack as it is in one universe, the bundle a UI asks for.
 
 What to notice:
 
-- Every analysis of the stack, the root first, with `built` (built in this universe,
-  [§16](https://astra-spec.org/0.1/specification/#16-driving-and-consuming)), each decision's
-  `used` (whether the universe uses it, with the root driving: the short specification's
-  Results *uses*) and `selected`, and each output's `built` (Results *built*), `takes` (for a
-  switch, the case it takes here: Elements *switch*) and its result's places here.
+- Every analysis of the stack, the root first, with `built` (built in this universe: the root,
+  or an analysis the universe drives,
+  [Elements](https://astra-spec.org/0.1/specification/#elements) *drives*), each decision's
+  `used` (whether the universe uses it, with the root driving:
+  [Results](https://astra-spec.org/0.1/specification/#results) *uses*) and `selected`, and each
+  output's `built` (Results *built*), `takes` (for a switch, the case it takes here: Elements
+  *switch*) and its result's places here.
 - `fit` gives `fit#huber`, and `comparison` its one result. Nothing is a switch here, so
   `takes` is `None` throughout, every decision is used and every output built. `None` for
   `used` or `built` would mean undetermined, as for a switch whose decision a universe that
@@ -355,7 +357,7 @@ What to notice:
 - The stale listing walks two collections: each place of each result, then the evidence. A
   `STALE_RESULT` message says what changed since the record's commit (12 characters of it); a
   result that reads a stale one is stale; the finding that cites it gets `STALE_EVIDENCE`
-  ([§20](https://astra-spec.org/0.1/specification/#20-checking-results)).
+  ([Results](https://astra-spec.org/0.1/specification/#results) *made from*, *Evidence*).
 - `universes=["ols"]` keeps only `fit#ols`, which is unchanged, yet `ok` is False: the filters
   narrow the results reported, never the evidence, and the finding cites the stale
   `comparison` (`src/astra/check.py:242`; design §4.7).
@@ -523,9 +525,9 @@ What to notice:
 - The trace: the message gives the code; `Catalogue.rule` gives rules.json's row (layer, level,
   statement), with no section, since the short specification's rules.json gives none
   (`source=None`); the code in quotes, `'"UNKNOWN_OPTION"'`, finds the module's `CODES` and the
-  line that reports it, and the module's docstring names its section,
-  [§8](https://astra-spec.org/0.1/specification/#8-decisions-and-options). A validator
-  code lives in `rules/<module>.py`, one module per section of Part II, but for
+  line that reports it, and the module's docstring names its section of the long
+  specification, *Decisions and options*. A validator code lives in `rules/<module>.py`, one
+  module per section of the long specification (design §4.4), but for
   `NOT_IN_REPOSITORY`, in `validate.py` (`src/astra/validate.py:92`). `contract.py` holds
   `UNSUPPORTED_SPEC_VERSION` and `INVALID_RECORD`, which `check.py` also attaches.
 - No rule module states a level: `Catalogue.level` makes a `MUST` an error and a `SHOULD` a
@@ -544,7 +546,7 @@ Under the hood:
 - `Catalogue.load` (`src/astra/diagnostics.py:105`) reads rules.json from the installed
   `astra.schema`, at every call. `find` (`:122`) falls back on `OWN` (`:60`); `level` is at
   `:139`. `errors` maps each JSON Schema keyword location to its code, for the schema layer
-  ([Annex D](https://astra-spec.org/0.1/specification/#d-the-schema-files-and-rulesjson)).
+  ([Schema files](https://astra-spec.org/0.1/specification/#schema-files)).
 - `rules.MODULES` lists the rule modules (`src/astra/rules/__init__.py:37`) and `rules.CODES`
   unions their `CODES` (`:51`); `validate.unchecked` (`src/astra/validate.py:62`) gives every
   validator code of rules.json that no module declares.
@@ -738,15 +740,17 @@ What to notice, and why it matters when reading:
   `Path.rename`: a new remote store into place, and a namespace set aside before `astra cache
   clear` removes it. A reader racing a runner sees the old record or the new one, never half of
   one.
-- **Citations follow the long specification.** A bare `§n` is the long specification's, at
-  astra-spec's tag `v0.1-long-spec`, not the short one at the commit in `astra-spec.pin`
-  (CLAUDE.md's *Design*); `design §n` is the design's. The citations moved from astra-spec
-  6c0ddb4, where §3 was *Conformance* and §4 *Conventions*, to `v0.1-long-spec`, past
-  astra-spec's 9e18deb, which puts *Conventions* first: validity and levels are
-  [§4](https://astra-spec.org/0.1/specification/#4-conformance), *Fields*
-  [§3](https://astra-spec.org/0.1/specification/#3-conventions). The design document is the
-  exception: it names the specification it was written against (`6c0ddb4`, in its header), so
-  its `§3` for the four roles is right as it stands.
+- **The code's citations follow the long specification.** A bare `§n` in the code is the long
+  specification's, at astra-spec's tag `v0.1-long-spec`, not the short one at the commit in
+  `astra-spec.pin` (CLAUDE.md's *Design*); `design §n` is the design's. The citations moved
+  from astra-spec 6c0ddb4, where §3 was *Conformance* and §4 *Conventions*, to
+  `v0.1-long-spec`, past astra-spec's 9e18deb, which puts *Conventions* first: validity and
+  levels are §4, *Fields* §3. The design document is the exception: it names the specification
+  it was written against (`6c0ddb4`, in its header), so its `§3` for the four roles is right as
+  it stands. The tour cites the published specification, the short one, instead, which has no
+  numbered sections: validity and levels are in its
+  [Rules](https://astra-spec.org/0.1/specification/#rules), and the field reference, which
+  *Fields* names, in its [Schema files](https://astra-spec.org/0.1/specification/#schema-files).
 - **The open questions.** None. Design §5 lists each question of the specification's meaning
   met in later work, with the reading kept meanwhile and the one place that keeps it, marked
   `# OPEN(<id>)`; the list is empty, so the grep finds no marker (chapter 1's step 7 ran it
@@ -900,7 +904,7 @@ $ git checkout --quiet astra.yaml
   *plans*): `comparison` reads it through `fitted#ols` and `fitted#huber`, each pin taking
   `fit` in its universe. Their commands, inputs and decisions are what their records hold, and
   a new option isn't among what `STALE_RESULT` compares
-  ([§20](https://astra-spec.org/0.1/specification/#20-checking-results)). `lasso` has no case,
+  ([Results](https://astra-spec.org/0.1/specification/#results) *made from*). `lasso` has no case,
   and that is no error: where `method` selected it, `fitted` wouldn't be built, nor what reads
   it without a pin (Elements *switch*). No universe selects it.
 - `comparison` is stale: its command and its `inputs`, as written, aren't those of its record's
@@ -972,9 +976,9 @@ recorded, not the file (`src/astra/check.py:505`).
 </details>
 
 3. Predict the module that reports each of `RESULT_IN_TWO_PLACES`, `INVALID_SYNTAX`,
-   `REMOTE_UNREACHABLE` and `MISPLACED_RECORD`, from its layer and section alone
-   (`astra rules CODE` gives the layer, and the long specification's tables the section). Then
-   find them.
+   `REMOTE_UNREACHABLE` and `MISPLACED_RECORD`, from its layer and subject alone
+   (`astra rules CODE` gives the layer and the rule, and chapter 2's step 6 lists the rule
+   modules). Then find them.
 
 <details><summary>Answer</summary>
 
@@ -1001,13 +1005,14 @@ src/astra/rules/driving.py:302:            yield context.diagnostic("RESULT_IN_T
 $ cd "$TOUR/work/06/build/line-fit"
 ```
 
-- `RESULT_IN_TWO_PLACES` is §16's, so `rules/driving.py`.
+- `RESULT_IN_TWO_PLACES` is a rule on driving, so `rules/driving.py`.
 - `INVALID_SYNTAX` is the parse layer's, `load.py`, for both kinds of file: it raises
   `ParseError`, which binding (`src/astra/stack.py:305`) and `read_record`
   (`src/astra/records.py:140`) turn into a diagnostic, or a reason of `INVALID_RECORD`.
-- `REMOTE_UNREACHABLE` is astra-tools' own (design §3): its rule is in `OWN`, and §17's module,
-  `rules/commits.py`, reports it.
-- `MISPLACED_RECORD` is a check rule (§20), so `check.py`, as a `Reason`, not a `Diagnostic`.
+- `REMOTE_UNREACHABLE` is astra-tools' own (design §3): its rule is in `OWN`, and the module
+  of analyses from a commit, `rules/commits.py`, reports it.
+- `MISPLACED_RECORD` is a rule of the check layer, so `check.py`, as a `Reason`, not a
+  `Diagnostic`.
 
 </details>
 
@@ -1032,10 +1037,10 @@ $ python -m pytest -q -p no:cacheprovider tests/test_decisions.py
 $ cd "$TOUR/work/06/build/line-fit"
 ```
 
-`test_decisions.py`, §8's module, checks a fragment of the message as well as the pointers,
-the level, the line and the column. Tests compare codes, places, and fragments of messages
-where a message must say something; never a rule's statement, which comes from rules.json
-(design §3).
+`test_decisions.py`, the test of `rules/decisions.py`, checks a fragment of the message as well
+as the pointers, the level, the line and the column. Tests compare codes, places, and fragments
+of messages where a message must say something; never a rule's statement, which comes from
+rules.json (design §3).
 
 </details>
 
@@ -1073,7 +1078,7 @@ $ cd ../line-fit
   recorded ones: stale.
 - With it, the stand-in at the path gives the content's hash and size, and the checker compares
   those, never the stand-in's own bytes
-  ([§20](https://astra-spec.org/0.1/specification/#20-checking-results);
+  ([Results](https://astra-spec.org/0.1/specification/#results) *made from*;
   `src/astra/check.py:515`): unchanged.
 
 </details>

@@ -32,7 +32,7 @@ cat > judge.py <<'EOF'
 
 It reads the file as src/astra/load.py does, runs the JSON Schema that src/astra/contract.py
 picks for it, and prints each error jsonschema gives: where it fails, its absolute keyword
-location (the key into rules.json's `errors`, Annex D), and the code found there. Then it prints
+location (the key into rules.json's `errors`), and the code found there. Then it prints
 what astra-tools reports for the file, from `Contract.check_analysis` or `check_record`.
 """
 
