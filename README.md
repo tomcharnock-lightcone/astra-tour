@@ -20,10 +20,11 @@ nix develop          # Python 3.14, uv, git, jq, perl, as the flake pins them
 ```
 
 `bootstrap.sh` clones astra-tools and astra-spec into `repos/` (git-ignored), checks out
-astra-tools `a01c665` (the head of its `v0.1-rebuild`) and, beside it, astra-spec at the commit
-in its `astra-spec.pin` (`e5fe476`, the short specification, with switches, where `outputs` is
-optional), and builds astra-tools' environment with every extra and the dev tools. It clones
-from GitHub; to clone from another remote that has those commits:
+astra-tools `d14bf16` (the head of its `v0.1-rebuild`) and, beside it, astra-spec at the commit
+in its `astra-spec.pin` (`8a84440`, the short specification, with switches, where `outputs` is
+optional, its generated files where the LinkML template keeps them), and builds astra-tools'
+environment with every extra and the dev tools. It clones from GitHub; to clone from another
+remote that has those commits:
 
 ```bash
 ASTRA_TOOLS_URL=<gitea>/astra-tools.git ASTRA_SPEC_URL=<gitea>/astra-spec.git ./bootstrap.sh
@@ -65,18 +66,16 @@ Things to know before step 1:
   a rule by its code, such as `MISSING_DECISION`, which the Rules table states, and anything else
   by a section, then the term it defines in bold there if it defines one, such as Elements
   *switch*, Results *uses* or Rules *valid*, linking only the section (Schema files defines
-  none). A `§n` or `Annex X` in astra-tools' code and messages, as the chapters paste them, and
-  in the tour's own `record.py` and `examples/run.py`, is the long specification the short one
-  replaced, which astra-tools' code still cites: astra-spec's tag `v0.1-long-spec`, which the
-  clone has (`git -C repos/astra-spec show v0.1-long-spec:docs/specification.md`).
-  `design §n` is astra-tools' `design/2026-11-07-v0.1-tooling-design.md`.
-  `src/astra/<path>.py:<line>` points into astra-tools at `a01c665`. `examples/…` is the tour's
+  none). astra-tools' code cites it the same way. A `§n` in the tour's own `record.py` and
+  `examples/run.py` is the long specification the short one replaced: astra-spec's tag
+  `v0.1-long-spec`, which the clone has
+  (`git -C repos/astra-spec show v0.1-long-spec:docs/specification.md`).
+  `src/astra/<path>.py:<line>` points into astra-tools at `d14bf16`. `examples/…` is the tour's
   copy of astra-examples.
 - **The specification versus astra-tools.** Each chapter says which is which. These are
   astra-tools' own: the three own codes, the plan's notes, the four JSON shapes, the exit
-  codes, the cache, and when a rule goes unchecked (design §4.13). Design §5 would list the
-  readings astra-tools keeps for open questions of the specification's meaning, each marked
-  `OPEN(…)` in the code; none is open now.
+  codes, the cache, and when a rule goes unchecked. No reading of the specification's meaning
+  is kept open: the code holds no `OPEN(…)` marker (chapter 1, step 7).
 
 ## The chapters
 
@@ -101,8 +100,8 @@ Things to know before step 1:
 ## astra-tools in one picture
 
 The pipeline is read → load → contract → bind → {rules, plan, view, check} → surfaces. Each
-layer imports only from the layers before it. The numbers are design §2's layout, which
-CLAUDE.md repeats.
+layer imports only from the layers before it. The numbers are the layers of astra-tools'
+CLAUDE.md.
 
 ```
 0 foundations  diagnostics.py grammar.py model.py      Location, Diagnostic, the Catalogue
@@ -130,7 +129,7 @@ CLAUDE.md repeats.
 ```
 
 `plan`, `view`, `check` and `history` validate first. `api._read` calls `validate.validated`,
-which binds and then runs the rules (`src/astra/api.py:186`). Only `bind` and `init` skip the
+which binds and then runs the rules (`src/astra/api.py:182`). Only `bind` and `init` skip the
 rules.
 
 ## Glossary of astra-tools' words
@@ -153,48 +152,48 @@ Module paths are under astra-tools' `src/astra/`.
   `OWN`, astra-tools' three codes. **contract**: `Contract` (`contract.py:69`), the JSON
   Schemas and the keyword-location → code map.
 - **context**: `Context` (`rules/context.py:22`), what the rules share for one stack:
-  selections, what each switch takes, what is built, reached and used, and design §4.13's
-  predicates. **undetermined**: what a rule is about, when another broken `MUST` leaves it
-  unknown. The rule then isn't checked or reported, and design §4.13's closed list of cases
-  says when that happens.
-- **selection**: `Selection` (`universes.py:50`), a universe's effective selection: its
+  selections, what each switch takes, what is built, reached and used, and the predicates
+  that say what is undetermined. **undetermined**: what a rule is about, when another broken
+  `MUST` leaves it unknown. The rule then isn't checked or reported. When that happens is
+  astra-tools' own policy, kept in `Context`'s predicates and the rules that consult them.
+- **selection**: `Selection` (`universes.py:48`), a universe's effective selection: its
   entries, own and inherited, each where written, and what it inherited. Nothing inherited is
   dropped.
 - **switch**: an output with a `switch`, a decision's address, and `cases`, from options to
   references (a `model.Output` whose `switch` is set, `model.py:113`); it has no result. It
   **takes**, in each universe, the case of the option its decision selects there: `Taken`
-  (`universes.py:527`), from `Meaning.taken` (`universes.py:601`); reading it reads what that
-  case names (`Through`, `universes.py:547`). An option with no case leaves it unbuilt there.
+  (`universes.py:520`), from `Meaning.taken` (`universes.py:593`); reading it reads what that
+  case names (`Through`, `universes.py:540`). An option with no case leaves it unbuilt there.
 - **built**: whether an element is built in a universe, from what it reads, never from
-  driving: `Meaning.built` (`universes.py:632`), `True`, `False` or `None` (undetermined).
+  driving: `Meaning.built` (`universes.py:624`), `True`, `False` or `None` (undetermined).
 - **reached**: with one analysis driving, what it reaches from its planning roots, built or
-  not, following only the case each switch takes: `Run.reached` (`universes.py:744`).
+  not, following only the case each switch takes: `Run.reached` (`universes.py:736`).
   **uses**: the decisions a universe uses, those that the results planned there list and those
-  that the switches reached there switch on: `Run.used` (`universes.py:758`), and on some
-  branch, every case followed, `Run.branches` (`universes.py:764`).
-- **planned result**: `Result` (`plan.py:78`), one result to build or to read: names, places,
+  that the switches reached there switch on: `Run.used` (`universes.py:750`), and on some
+  branch, every case followed, `Run.branches` (`universes.py:756`).
+- **planned result**: `Result` (`plan.py:76`), one result to build or to read: names, places,
   reads, decisions, the command template, the folder it runs in. A result is **read-only**
   when its analysis is at a commit other than the root's: it is read through its record, never
-  built. **place**: `Place` (`universes.py:478`), a name's address, record path and bytes path.
-  **read**: `Read` (`plan.py:63`), one entry of a result's inputs: its path, commit and the
+  built. **place**: `Place` (`universes.py:471`), a name's address, record path and bytes path.
+  **read**: `Read` (`plan.py:62`), one entry of a result's inputs: its path, commit and the
   result it reads, and `via`, each case taken on the way where it reads a switch.
-- **note**: `Note` (`plan.py:103`), one of the plan's remarks, never a diagnostic:
+- **note**: `Note` (`plan.py:101`), one of the plan's remarks, never a diagnostic:
   `fallback_pin`, `two_names`, `unplanned`, `not_built` (an output, or a switch nothing reads,
   that a switch leaves unbuilt, with the switch and the option), `same_computation`,
   `outside_folder`.
 - **stand-in**: the `StandIn` protocol (`sources/standins.py:32`): Git LFS, git-annex, DVC, and
   anything registered under `astra.standins`. **environment scheme**: `environments.py`, under
   `astra.environments`.
-- **status**: `Status` (`check.py:94`), a place's record status (`unchanged`, `stale`,
+- **status**: `Status` (`check.py:90`), a place's record status (`unchanged`, `stale`,
   `missing`) and bytes status (`present`, `absent`), plus astra-tools' `committed`.
-  **reason**: `Reason` (`check.py:81`), a check code on one place or one evidence, with
+  **reason**: `Reason` (`check.py:78`), a check code on one place or one evidence, with
   `breaks` under `INVALID_RECORD`.
 - **digest**: `Digest` (`hashing.py:30`), a SHA-256 and a size.
 - **the cache's namespaces**: `cache.py:21`. `remotes` holds the stores, `validity` the
   verdicts on analyses from a commit (`rules/commits.py`), `hashes` the working-tree files'
   digests by inode, `worktrees` the checkouts for runs, and `papers` the papers cited by DOI.
 - **unchecked**: the validator codes of the installed `rules.json` that no module declares
-  (`validate.py:62`). It is empty now.
+  (`validate.py:61`). It is empty now.
 - **shape**: the name and version a JSON output carries, such as `astra-plan/1` (each
   `to_json`).
 - **runner helpers**: `new_record`, `write_record`, `uncommitted_changes` and `land`

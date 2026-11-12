@@ -38,7 +38,7 @@ tour-pointer = tour_plugin:STANDIN
 EOF
 
 cat > plugin/tour_plugin.py <<'EOF'
-"""A plug-in for astra-tools: an environment scheme and a stand-in (design §4.10)."""
+"""A plug-in for astra-tools: an environment scheme and a stand-in."""
 
 from dataclasses import dataclass
 

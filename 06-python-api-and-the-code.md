@@ -42,10 +42,11 @@ $ cd work/06/build/line-fit
 - `ASTRA_TOOLS` is the astra-tools checkout whose `src/astra` the `python` on PATH imports
   (`repos/astra-tools`, which `bootstrap.sh` made): the folder that holds `src/astra/api.py`.
   Steps 7, 9 and 10 grep it and run its tests, read only.
-- The whole chapter assumes that checkout at `a01c665` (the head of its `v0.1-rebuild`), its
+- The whole chapter assumes that checkout at `d14bf16` (the head of its `v0.1-rebuild`), its
   venv built with astra-spec installed from `../astra-spec-pinned` at the commit in its
-  `astra-spec.pin` (`e5fe476`, the short specification with switches, where `outputs` is
-  optional), as its CLAUDE.md's *Development* says and `bootstrap.sh` does.
+  `astra-spec.pin` (`8a84440`, the short specification with switches, where `outputs` is
+  optional, its generated files where the LinkML template keeps them), as its CLAUDE.md's
+  *Setup* says and `bootstrap.sh` does.
 - The ids hold only where `python3 --version` prints 3.14 after `source env.sh`: run.py's
   records name the `python3` on PATH (`urn:astra-examples:cpython-3.14`). On another version,
   every id from noisy-line's `Build the points` on differs (the setup warns), and so do the
@@ -59,7 +60,8 @@ $ cd work/06/build/line-fit
 
 ## 1. The public surface
 
-`astra.api` is the one import path that stays stable (design §2). Start with what it exports.
+`astra.api` holds "the stable public functions of astra-tools", as its docstring says. Start
+with what it exports.
 
 ```console
 $ python -q
@@ -90,27 +92,28 @@ What to notice:
 - Each takes the analysis's folder, the current one by default. Nothing is searched for: this
   session runs in line-fit's folder, so `api.validate()` is line-fit.
 - `view` takes the universe first. The filters are keyword-only. `universes` and `outputs`
-  exist only here: `astra plan` takes no filters (design §4.6), and `astra check` has only
+  exist only here: `astra plan` takes no filters, and `astra check` has only
   `--at`, which is `at` (`src/astra/cli/check.py:15`), and `--json` (`:21`).
 - The exceptions are part of the surface: `NoAnalysisError` (no `astra.yaml` there),
   `InvalidAnalysisError` (a `MUST` broken, so no plan, view or history), `RequestError` (a
   universe, output or revision that isn't there), `NotInHistoryError`. `GitError` and
   `CacheError` aren't re-exported: they are in `astra.sources.git` and `astra.cache`.
 - `astra` has no `__file__`: it is a namespace package of three portions, astra-tools'
-  `src/astra`, astra-spec's `src/astra` (which holds `astra.schema`), and
-  `site-packages/astra/docs/llms.txt`, which astra-spec's wheel installs and `astra guide` prints.
+  `src/astra`, astra-spec's `src/astra` (`astra.datamodel`, and the LinkML sources in
+  `astra.schema`), and `site-packages/astra`, which astra-spec's wheel installs: the generated
+  files in `astra.schema`, and `docs/llms.txt`, which `astra guide` prints.
 
 Under the hood:
 
-- `_root` (`src/astra/api.py:245`) turns the folder into a reader and a root: one
+- `_root` (`src/astra/api.py:241`) turns the folder into a reader and a root: one
   `Repository.discover` (`git rev-parse --show-toplevel`), then a `WorktreeReader` on the
   repository's top, with the folder as a path from there. A folder with no `astra.yaml` file, or
-  a symlink in its place, is `NoAnalysisError` (`src/astra/api.py:261`).
-- `_read` (`src/astra/api.py:186`) puts a `CommitReader` in place of the working tree for `at=`,
-  then calls `validate.validated` (`src/astra/api.py:201`), which gives the report and the stack
+  a symlink in its place, is `NoAnalysisError` (`src/astra/api.py:257`).
+- `_read` (`src/astra/api.py:182`) puts a `CommitReader` in place of the working tree for `at=`,
+  then calls `validate.validated` (`src/astra/api.py:197`), which gives the report and the stack
   together. So every function but `bind` and `init` validates the whole stack first. `plan`,
   `view` and `history` go through `_valid`, which raises `InvalidAnalysisError` on an invalid
-  report (`src/astra/api.py:181`).
+  report (`src/astra/api.py:177`).
 - The types print as strings: `api.py`, like every module but two docstring-only
   `__init__.py`, has `from __future__ import annotations`.
 - `astra guide` reads `files("astra") / "docs" / "llms.txt"` (`src/astra/cli/guide.py:16`).
@@ -168,20 +171,20 @@ What to notice:
 
 Under the hood:
 
-- `validate.validated` (`src/astra/validate.py:75`): `Catalogue.load()` reads rules.json
-  (`:81`), `bind` reads every file and follows every declaration (`:82`), and `rules.check` runs
-  the rule modules on a `Context` of the stack (`:94`). Duplicates go through `dict.fromkeys`
-  (`:97`), then the diagnostics are sorted, the working tree's files first (`:98`).
+- `validate.validated` (`src/astra/validate.py:74`): `Catalogue.load()` reads rules.json
+  (`:80`), `bind` reads every file and follows every declaration (`:81`), and `rules.check` runs
+  the rule modules on a `Context` of the stack (`:93`). Duplicates go through `dict.fromkeys`
+  (`:96`), then the diagnostics are sorted, the working tree's files first (`:97`).
 - `bind` (`src/astra/stack.py:242`) reads each analysis once by its identity. A remote commit
   comes from the cache's `remotes`: one bare repository per URL, fetched with
-  `--filter=blob:none` and kept by a ref (`src/astra/sources/remote.py`, design §4.3; chapter 5
+  `--filter=blob:none` and kept by a ref (`src/astra/sources/remote.py`; chapter 5
   follows it). On a fresh cache, the first call of this session is the one that fetches
   noisy-line.
 - `Identity` is at `src/astra/stack.py:49`, `Member` at `:93`, `Resolution` at `:156`, `Stack`
   at `:185`, each a frozen dataclass. Rules, plan, view and check never re-resolve what a file
   writes: they read `element`. `Stack.element` (`src/astra/stack.py:201`) resolves an address
   afterwards in two places only: one a caller asks for (`plan.root_output`, for `outputs=`,
-  `src/astra/plan.py:351`), and a place's name at a record's commit (`src/astra/check.py:365`).
+  `src/astra/plan.py:348`), and a place's name at a record's commit (`src/astra/check.py:359`).
 
 ## 3. plan: the planned results and their commands
 
@@ -233,21 +236,21 @@ What to notice:
 - `universes=["huber"]` keeps what is built in `huber` and what it reads: `comparison`, built
   once, goes. `outputs=["comparison"]` asks for an output and pulls in what it reads.
 - `notes` is empty here. The notes (`fallback_pin`, `two_names`, `unplanned`, `not_built`,
-  `same_computation`, `outside_folder`) are astra-tools' own (design §4.6): no code, never an
+  `same_computation`, `outside_folder`) are astra-tools' own: no code, never an
   error, never an exit code.
 
 Under the hood:
 
-- `plan.plan` (`src/astra/plan.py:187`) gets the planned results from `universes.building`
-  (`:210`), given what the root reaches from its own outputs (`_run`, `:209`); `visit` (`:231`)
+- `plan.plan` (`src/astra/plan.py:185`) gets the planned results from `universes.building`
+  (`:207`), given what the root reaches from its own outputs (`_run`, `:206`); `visit` (`:228`)
   then makes each one after what it reads, depth first, and leaves out any whose planning isn't
   determined, which happens only on an invalid stack, for `check`.
-- `Result` (`:77`) and `Read` (`:62`) are frozen dataclasses: the API hands out objects, and
+- `Result` (`:75`) and `Read` (`:61`) are frozen dataclasses: the API hands out objects, and
   only `to_json` makes dicts.
-- `render_command` (`:711`): `{output}` is the first name's default place (`:752`), the
-  `<commit>:<path>` form is at `:743`, and `{decisions.<entry>}` at `:758`: the option selected,
+- `render_command` (`:707`): `{output}` is the first name's default place (`:748`), the
+  `<commit>:<path>` form is at `:739`, and `{decisions.<entry>}` at `:754`: the option selected,
   which a valid stack always has for a decision a planned result lists (`MISSING_DECISION`).
-- An unknown universe is a `RequestError` from `root_universe` (`:331`).
+- An unknown universe is a `RequestError` from `root_universe` (`:328`).
 
 ## 4. view: one universe
 
@@ -282,7 +285,7 @@ What to notice:
 - `fit` gives `fit#huber`, and `comparison` its one result. Nothing is a switch here, so
   `takes` is `None` throughout, every decision is used and every output built. `None` for
   `used` or `built` would mean undetermined, as for a switch whose decision a universe that
-  doesn't reach it leaves unset (design §4.13 case 6).
+  doesn't reach it leaves unset.
 - `to_json()` adds each file's `fields`, as written (step 6).
 
 Under the hood:
@@ -293,7 +296,7 @@ Under the hood:
   `context.meaning` (`:129`), and each output's result from `context.building.planned` (`:130`).
   It reads no analysis file, since binding has read them all; only `rules.json`, through
   `Catalogue.load` (`:104`; chapter 1's step 7 lists the meaning layer's IO).
-- Only a valid stack has a view: `api.view` goes through `_valid` (`src/astra/api.py:113`).
+- Only a valid stack has a view: `api.view` goes through `_valid` (`src/astra/api.py:111`).
 
 ## 5. check: the statuses, and the stale results in ten lines
 
@@ -360,7 +363,7 @@ What to notice:
   ([Results](https://astra-spec.org/0.1/specification/#results) *made from*, *Evidence*).
 - `universes=["ols"]` keeps only `fit#ols`, which is unchanged, yet `ok` is False: the filters
   narrow the results reported, never the evidence, and the finding cites the stale
-  `comparison` (`src/astra/check.py:242`; design §4.7).
+  `comparison` (`src/astra/check.py:237`).
 - `at="HEAD~1"` checks the analysis as it was at that commit, its records and bytes too.
   `report.at` is then the full commit, not `"worktree"`.
 - `api.history()` gives a `History` whose queries read git on demand. `timeline` lists the
@@ -368,18 +371,18 @@ What to notice:
 
 Under the hood:
 
-- `api.check` (`src/astra/api.py:116`) validates, keeps the errors (`:135`) and calls
-  `check.check` (`:139`), even on an invalid stack (step 7).
-- `check.check` (`src/astra/check.py:190`) plans the whole stack (`:209`), then gives each place
-  its statuses in `_Checker.place` (`:291`): `read_record` (`:301`), then `_then` (`:324`),
-  which binds the stack as it was at the record's commit through a `CommitReader` (`:391`), once
-  per repository, commit and folder (`:360`).
-- `_changes` (`:423`) writes each `STALE_RESULT` message (the selection's at `:460`), and
-  `place` attaches the code to them (`:333`). Bytes are hashed by `hashing.digest` (`:529`),
+- `api.check` (`src/astra/api.py:114`) validates, keeps the errors (`:132`) and calls
+  `check.check` (`:136`), even on an invalid stack (step 7).
+- `check.check` (`src/astra/check.py:186`) plans the whole stack (`:204`), then gives each place
+  its statuses in `_Checker.place` (`:286`): `read_record` (`:296`), then `_then` (`:319`),
+  which binds the stack as it was at the record's commit through a `CommitReader` (`:385`), once
+  per repository, commit and folder (`:354`).
+- `_changes` (`:416`) writes each `STALE_RESULT` message (the selection's at `:452`), and
+  `place` attaches the code to them (`:328`). Bytes are hashed by `hashing.digest` (`:520`),
   kept in the cache's `hashes` by device and inode with size and modification time
   (`src/astra/hashing.py:47`), so an unchanged file costs a `stat`.
-- `CheckReport.ok` is at `src/astra/check.py:139`; evidence statuses come from
-  `_Checker.evidence` (`:558`).
+- `CheckReport.ok` is at `src/astra/check.py:135`; evidence statuses come from
+  `_Checker.evidence` (`:549`).
 
 ## 6. The four JSON shapes
 
@@ -414,7 +417,7 @@ exit 2
 What to notice:
 
 - Four shapes, each named and versioned in its `shape` key. They are astra-tools' own, shared
-  with astra-typescript (design §4.11), not the specification's. No JSON Schema of them exists
+  with astra-typescript, not the specification's. No JSON Schema of them exists
   yet: astra-spec's `conformance/` has a schema only for its cases' `expected.json`. Their form
   is what `to_json` gives, pinned by astra-tools' tests.
 - In `astra-plan/1`, an input's `result` is the index of the result it reads (`1`, `2`), so the
@@ -429,11 +432,11 @@ What to notice:
 Under the hood:
 
 - Each `to_json` is a hand-written dict over `dataclasses.asdict` of the small pieces (a place,
-  an identity, a reason, a location): `ValidationReport.to_json` (`src/astra/validate.py:43`),
+  an identity, a reason, a location): `ValidationReport.to_json` (`src/astra/validate.py:42`),
   `Diagnostic.to_json`, which is `asdict(self)` (`src/astra/diagnostics.py:44`),
-  `Plan.to_json` (`src/astra/plan.py:125`, with the index at `:128`), `UniverseView.to_json`
+  `Plan.to_json` (`src/astra/plan.py:123`, with the index at `:126`), `UniverseView.to_json`
   (`src/astra/view.py:62`; `fields` is `member.document.value`, `:80`) and
-  `CheckReport.to_json` (`src/astra/check.py:147`).
+  `CheckReport.to_json` (`src/astra/check.py:143`).
 - `write_json` prints `json.dumps(document, indent=2, ensure_ascii=False)`
   (`src/astra/cli/__init__.py:129`). `cli/view.py` maps `RequestError` to `click.BadParameter`
   (`src/astra/cli/view.py:35`). `FAILED = 1` and `USAGE = 2` are at
@@ -491,19 +494,19 @@ Each option an option reference, selection or key of `cases` names is one of its
 $ git checkout --quiet astra.yaml
 $ cd "$ASTRA_TOOLS"
 $ git grep -n '"UNKNOWN_OPTION"' -- src/astra
-src/astra/rules/decisions.py:19:CODES = frozenset({"UNKNOWN_OPTION"})
-src/astra/rules/decisions.py:49:        yield context.diagnostic("UNKNOWN_OPTION", message, location)
+src/astra/rules/decisions.py:18:CODES = frozenset({"UNKNOWN_OPTION"})
+src/astra/rules/decisions.py:48:        yield context.diagnostic("UNKNOWN_OPTION", message, location)
 $ git grep -n 'has no option' -- src/astra
-src/astra/rules/decisions.py:43:                f"`{owner.id}` switches on `{decision.address}`, which has no option `{option}` "
-src/astra/rules/decisions.py:47:            message = f"`{resolution.address}` has no option `{option}`: its options are {listed}"
+src/astra/rules/decisions.py:42:                f"`{owner.id}` switches on `{decision.address}`, which has no option `{option}` "
+src/astra/rules/decisions.py:46:            message = f"`{resolution.address}` has no option `{option}`: its options are {listed}"
 $ git grep -n '"STALE_RESULT"' -- src/astra
-src/astra/check.py:66:        "STALE_RESULT",
-src/astra/check.py:327:                    reasons.append(self.reason("STALE_RESULT", then, at))
-src/astra/check.py:333:                    reasons.extend(self.reason("STALE_RESULT", change, at) for change in changes)
+src/astra/check.py:63:        "STALE_RESULT",
+src/astra/check.py:322:                    reasons.append(self.reason("STALE_RESULT", then, at))
+src/astra/check.py:328:                    reasons.extend(self.reason("STALE_RESULT", change, at) for change in changes)
 $ git grep -n 'where it selected' -- src/astra
-src/astra/check.py:673:                f"`{step.universe.id}`, where it selected `{before.option}` at {commit}"
+src/astra/check.py:663:                f"`{step.universe.id}`, where it selected `{before.option}` at {commit}"
 $ git grep -n 'selects {' -- src/astra
-src/astra/check.py:460:                    f"`{written}` selects {_option(option)} in `{result.universe.id}`, where it "
+src/astra/check.py:452:                    f"`{written}` selects {_option(option)} in `{result.universe.id}`, where it "
 $ cd "$TOUR/work/06/build/line-fit"
 ```
 
@@ -515,29 +518,28 @@ What to notice:
   the parse and schema rules, and `UNSUPPORTED_SPEC_VERSION` (`src/astra/contract.py:95`).
 - `api.plan()` raises `InvalidAnalysisError`, which holds the validation report. `api.check()`
   doesn't raise: it holds the errors, and gives statuses only to the results whose planning is
-  determined (design §4.13 case 12, astra-tools' policy of when a rule isn't checked). Here
+  determined (astra-tools' policy of when a rule isn't checked). Here
   that is all four: no switch is on `method`, so `hubr` leaves every result's planning
   determined, and `fit#huber` gets statuses: stale, as `hubr` isn't the `huber` its record's
   commit selected. A switch on `method` would be undetermined in `huber`, where the option
-  selected names nothing (case 6), and case 12 would then withhold statuses from what reads it
-  there (Try 1). `astra check` would exit 1 on the errors even with every status unchanged
+  selected names nothing, and statuses would then be withheld from what reads it there
+  (Try 1). `astra check` would exit 1 on the errors even with every status unchanged
   (`CheckReport.ok`).
 - The trace: the message gives the code; `Catalogue.rule` gives rules.json's row (layer, level,
   statement), with no section, since the short specification's rules.json gives none
   (`source=None`); the code in quotes, `'"UNKNOWN_OPTION"'`, finds the module's `CODES` and the
-  line that reports it, and the module's docstring names its section of the long
-  specification, *Decisions and options*. A validator code lives in `rules/<module>.py`, one
-  module per section of the long specification (design §4.4), but for
-  `NOT_IN_REPOSITORY`, in `validate.py` (`src/astra/validate.py:92`). `contract.py` holds
+  line that reports it, and the module's docstring names its subject, *Decisions and
+  options*. A validator code lives in `rules/<module>.py`, one module per subject, but for
+  `NOT_IN_REPOSITORY`, in `validate.py` (`src/astra/validate.py:91`). `contract.py` holds
   `UNSUPPORTED_SPEC_VERSION` and `INVALID_RECORD`, which `check.py` also attaches.
 - No rule module states a level: `Catalogue.level` makes a `MUST` an error and a `SHOULD` a
   warning. astra-tools' three own codes are in `OWN`, with `source='astra-tools'`; `astra
   rules` lists them apart.
-- A check code is attached in one place (`check.py:327`, `:333`) and its messages written in
+- A check code is attached in one place (`check.py:322`, `:328`) and its messages written in
   another. The message of step 5, "`method` selects `ols` in `huber`, where it selected
   `huber`", spans an f-string's line break, so `where it selected` finds only another message,
   the one for a switch whose decision selects another option than at the record's commit
-  (`check.py:673`); grep a shorter fixed part.
+  (`check.py:663`); grep a shorter fixed part.
 - The catalogue says `schema version dev`: the tour's astra-spec is a development build, not a
   release.
 
@@ -547,19 +549,19 @@ Under the hood:
   `astra.schema`, at every call. `find` (`:122`) falls back on `OWN` (`:60`); `level` is at
   `:139`. `errors` maps each JSON Schema keyword location to its code, for the schema layer
   ([Schema files](https://astra-spec.org/0.1/specification/#schema-files)).
-- `rules.MODULES` lists the rule modules (`src/astra/rules/__init__.py:37`) and `rules.CODES`
-  unions their `CODES` (`:51`); `validate.unchecked` (`src/astra/validate.py:62`) gives every
+- `rules.MODULES` lists the rule modules (`src/astra/rules/__init__.py:36`) and `rules.CODES`
+  unions their `CODES` (`:50`); `validate.unchecked` (`src/astra/validate.py:61`) gives every
   validator code of rules.json that no module declares.
-- In `rules/decisions.py`: `CODES` (`src/astra/rules/decisions.py:19`), the message (`:47`; a
-  key of a switch's `cases` gets its own, `:42-45`) and `context.diagnostic` (`:49`), which
+- In `rules/decisions.py`: `CODES` (`src/astra/rules/decisions.py:18`), the message (`:46`; a
+  key of a switch's `cases` gets its own, `:41-44`) and `context.diagnostic` (`:48`), which
   takes the level from the catalogue (`src/astra/rules/context.py:30`).
 - `astra plan` writes the validation report on `InvalidAnalysisError`
-  (`src/astra/cli/plan.py:41`), and `astra view` too (`src/astra/cli/view.py:31`).
+  (`src/astra/cli/plan.py:40`), and `astra view` too (`src/astra/cli/view.py:31`).
 
 ## 8. Extension points: environments and stand-ins
 
 Two entry-point groups let another package, lightcone-cli say, add an environment scheme or a
-stand-in without astra-tools knowing it (design §4.10). `work/06/plugin` is such a package,
+stand-in without astra-tools knowing it. `work/06/plugin` is such a package,
 installed nowhere: `PYTHONPATH` makes it visible.
 
 ```console
@@ -626,19 +628,19 @@ Under the hood:
 
 - `environments.registered` (`src/astra/environments.py:51`) loads every entry point of the
   group `astra.environments` (`:17`); `answers` (`:58`) asks each scheme that recognises the IRI.
-  The checker loads them once per check (`src/astra/check.py:280`) and asks once per IRI
-  (`:343`). The text is drawn by `src/astra/cli/text/check.py:49`.
+  The checker loads them once per check (`src/astra/check.py:275`) and asks once per IRI
+  (`:338`). The text is drawn by `src/astra/cli/text/check.py:49`.
 - `standins.registered` (`src/astra/sources/standins.py:142`) gives `BUILT_IN` (`:138`), then the
-  plug-ins. The validator loads them at each validation (`src/astra/rules/inputs.py:37`): a path
-  with no file is fine where a stand-in recognises it (`:94`), the message names them all
-  (`:99`), and `git ls-files` is asked about each stand-in's place too (`:52`).
-- `_Checker._content` (`src/astra/check.py:509`) asks a stand-in for an input's hash only where
-  the stand-in sits at the path itself (`place(path) == path`, `:516`), and then compares what
+  plug-ins. The validator loads them at each validation (`src/astra/rules/inputs.py:36`): a path
+  with no file is fine where a stand-in recognises it (`:93`), the message names them all
+  (`:98`), and `git ls-files` is asked about each stand-in's place too (`:51`).
+- `_Checker._content` (`src/astra/check.py:501`) asks a stand-in for an input's hash only where
+  the stand-in sits at the path itself (`place(path) == path`, `:508`), and then compares what
   it gives, never the stand-in's own bytes. A DVC file sits beside the path (`<path>.dvc`), so
-  the checker never asks it: it hashes the file at the path where one is there (`:519`), as in
+  the checker never asks it: it hashes the file at the path where one is there (`:511`), as in
   a working tree after `dvc pull`, and the result can be `unchanged`. Only where no file is at
   the path (at a commit, or before `dvc pull`) does `_content` give `None` and the result go
-  stale (`:487`), and only then because a DVC file gives an MD5, not a SHA-256
+  stale (`:479`), and only then because a DVC file gives an MD5, not a SHA-256
   (`src/astra/sources/standins.py:135`). Chapter 5's step 6 runs the stale case, and chapter
   4's step 9 a Git LFS pointer, which sits at the path.
 - Both protocols are `typing.Protocol`s (`src/astra/environments.py:21`,
@@ -646,7 +648,7 @@ Under the hood:
 
 ## 9. Reading the code: its constraints, and the open questions
 
-CLAUDE.md's global constraints shape every module. Each is visible from outside.
+CLAUDE.md's *Key Conventions* shape every module. Each is visible from outside.
 
 ```console
 $ cd ../noisy-line
@@ -688,24 +690,19 @@ $ cd "$ASTRA_TOOLS"
 $ git grep -l subprocess -- src/astra
 src/astra/sources/git.py
 $ git grep -n -e 'os.replace(' -e '\.rename(' -- src/astra
-src/astra/api.py:238:        os.replace(temporary, file)
+src/astra/api.py:234:        os.replace(temporary, file)
 src/astra/cache.py:71:            os.replace(temporary, path)
 src/astra/cache.py:94:                kept.rename(aside / namespace)
 src/astra/cli/schema.py:43:            os.replace(temporary, path)
 src/astra/records.py:162:        os.replace(temporary, path)
-src/astra/records.py:296:        os.replace(source, target)
-src/astra/records.py:306:        os.replace(temporary, target)
+src/astra/records.py:294:        os.replace(source, target)
+src/astra/records.py:304:        os.replace(temporary, target)
 src/astra/sources/remote.py:68:            made.rename(path)
-$ git grep -n -E '\(§[34]' -- src/astra
-src/astra/api.py:177:    revision `at`, where it is valid (§4). Raises InvalidAnalysisError where it isn't, and
-src/astra/check.py:288:        """`code` broken, at the level its rule's `MUST` or `SHOULD` gives (§4)."""
-src/astra/diagnostics.py:6:broken is an error and a `SHOULD` a warning, in every layer (§4).
-src/astra/diagnostics.py:140:        """The level of `code`: an error for a `MUST`, a warning for a `SHOULD` (§4)."""
-src/astra/diagnostics.py:146:        """A diagnostic for `code`, at the level its rule's `MUST` or `SHOULD` gives (§4)."""
-src/astra/reference.py:2:from astra-spec's LinkML sources through linkml-runtime, the extra `[reference]` (§3 *Fields*,
-src/astra/rules/context.py:33:        """A diagnostic for `code`, at its rule's level (§4)."""
-src/astra/validate.py:1:"""validate(): the validator's report on an analysis (§4, design §4.11).
-src/astra/validate.py:40:        """True when no `MUST` is broken: warnings and `unchecked` notwithstanding (§4)."""
+$ git grep -n '§' -- src/astra
+src/astra/load.py:4:1.2.2's core schema table (§10.3.2), so that `2026-10-26` is a string. Every
+src/astra/load.py:46:"""YAML 1.2.2 §10.3.2's table: the tag of a plain scalar is that of the first row it matches in
+$ git grep -n 'Rules \*stack\*' -- src/astra
+src/astra/stack.py:186:    """The root and every analysis it declares, directly or through others (Rules *stack*)."""
 $ git grep -n 'OPEN(' -- src/astra; echo "exit $?"
 exit 1
 $ cd "$TOUR/work/06/build/line-fit"
@@ -714,11 +711,11 @@ $ cd "$TOUR/work/06/build/line-fit"
 What to notice, and why it matters when reading:
 
 - **git only through its binary.** One check runs six git processes. There is one
-  `cat-file --batch` per `CommitReader` (`src/astra/sources/reader.py:187`), each open for as
+  `cat-file --batch` per `CommitReader` (`src/astra/sources/reader.py:186`), each open for as
   long as its reader: one at the record's commit, 3732bd7, bound for the comparison
-  (`src/astra/check.py:387`), after `cat-file -t` has asked whether git has it
-  (`src/astra/sources/git.py:103`); one at HEAD, for `committed` (`src/astra/check.py:550`).
-  `Objects`' docstring and design §4.3 read as one per repository; it is one per reader. The
+  (`src/astra/check.py:381`), after `cat-file -t` has asked whether git has it
+  (`src/astra/sources/git.py:103`); one at HEAD, for `committed` (`src/astra/check.py:541`).
+  `Objects`' docstring reads as one per repository; it is one per reader. The
   `ls-files` asks about `config.json`, and about `config.json.dvc`, the DVC stand-in's place.
   Every git question is a visible command in `sources/git.py`, with git's own configuration and
   authentication, and `GIT_TRACE` (to a file: astra-tools captures git's stderr) shows each one.
@@ -726,39 +723,37 @@ What to notice, and why it matters when reading:
   67 imported), dunder names aside: the scan skips them, and `api.__all__` is a list. Constants
   are `MappingProxyType`, `frozenset` or tuples, and `Catalogue.load()` builds a new catalogue
   at each call. No in-process registry or module-level cache exists: the
-  plug-ins are read from entry-point metadata at each call (`src/astra/check.py:279`-`280`,
-  `src/astra/rules/inputs.py:37`), and the caches live on objects made for one call,
+  plug-ins are read from entry-point metadata at each call (`src/astra/check.py:274`-`275`,
+  `src/astra/rules/inputs.py:36`), and the caches live on objects made for one call,
   `Context`'s `cached_property`s (`src/astra/rules/context.py:50`) and `_Checker`'s dicts
-  (`src/astra/check.py:281`). So a call's output depends on its arguments, the files, the
+  (`src/astra/check.py:276`). So a call's output depends on its arguments, the files, the
   environment (`ASTRA_CACHE_DIR`, git's own configuration) and the distributions installed or
   visible on `PYTHONPATH` (step 8), never on what an earlier call left in memory; several
   processes can share one cache.
 - **Atomic writes.** Six `os.replace` sites. Five replace the target by a temporary file
   written beside it: a record, a cache entry, an exported schema, `init`'s `astra.yaml`, and
-  `land`'s copy across file systems (`records.py:306`). `land`'s first move (`records.py:296`)
+  `land`'s copy across file systems (`records.py:304`). `land`'s first move (`records.py:294`)
   is itself an atomic rename of the run's file into the main checkout. Folders move by
   `Path.rename`: a new remote store into place, and a namespace set aside before `astra cache
   clear` removes it. A reader racing a runner sees the old record or the new one, never half of
   one.
-- **The code's citations follow the long specification.** A bare `§n` in the code is the long
-  specification's, at astra-spec's tag `v0.1-long-spec`, not the short one at the commit in
-  `astra-spec.pin` (CLAUDE.md's *Design*); `design §n` is the design's. The citations moved
-  from astra-spec 6c0ddb4, where §3 was *Conformance* and §4 *Conventions*, to
-  `v0.1-long-spec`, past astra-spec's 9e18deb, which puts *Conventions* first: validity and
-  levels are §4, *Fields* §3. The design document is the exception: it names the specification
-  it was written against (`6c0ddb4`, in its header), so its `§3` for the four roles is right as
-  it stands. The tour cites the published specification, the short one, instead, which has no
-  numbered sections: validity and levels are in its
-  [Rules](https://astra-spec.org/0.1/specification/#rules), and the field reference, which
-  *Fields* names, in its [Schema files](https://astra-spec.org/0.1/specification/#schema-files).
-- **The open questions.** None. Design §5 lists each question of the specification's meaning
-  met in later work, with the reading kept meanwhile and the one place that keeps it, marked
-  `# OPEN(<id>)`; the list is empty, so the grep finds no marker (chapter 1's step 7 ran it
-  too). The three it held, O2, O16 and O30, were all about conditions, and closed when issue
-  #93 took conditions out of the specification; switches took their place (chapter 3).
+- **The code cites the short specification, as the tour does.** A section, then the term it
+  defines there if it defines one, as (Rules *stack*) on `Stack`, or a rule by its code, as
+  (Rules `OUTPUT_CYCLE`): the specification at the commit in `astra-spec.pin`. It has no numbered
+  sections, so the one `§` left in the code is YAML 1.2.2's own, its core schema's table, in
+  `load.py`. Validity and levels are in the specification's
+  [Rules](https://astra-spec.org/0.1/specification/#rules), and the field reference in its
+  [Schema files](https://astra-spec.org/0.1/specification/#schema-files).
+- **The open questions.** None. While astra-tools was rebuilt for 0.1, each question of the
+  specification's meaning met in the work was listed with the reading kept meanwhile, and the
+  one place that kept it was marked `# OPEN(<id>)`; none is left, so the grep finds no marker
+  (chapter 1's step 7 ran it too). The last three, O2, O16 and O30, were all about conditions,
+  and closed when issue #93 took conditions out of the specification; switches took their
+  place (chapter 3).
 
-- **Design §1's seven principles** settle what the code does and doesn't do; read them before
-  any module.
+- **CLAUDE.md's *Key Design Principles*** (the layers, levels from the catalogue, import
+  cost as part of the API) settle what the code does and doesn't do; read them before any
+  module.
 
 Under the hood:
 
@@ -769,7 +764,7 @@ Under the hood:
   parses tree objects from its output.
 - `cache.put` (`src/astra/cache.py:61`) is the pattern: `mkstemp` in the entry's folder, write,
   `os.replace`, unlink the temporary file if it is still there. `records._move`
-  (`src/astra/records.py:290`) tries the rename first and copies only on `EXDEV`;
+  (`src/astra/records.py:288`) tries the rename first and copies only on `EXDEV`;
   `remote._store` (`src/astra/sources/remote.py:58`) makes a bare repository in a temporary
   folder and renames it into place, and the process that loses the race removes its own
   (`:68`).
@@ -783,7 +778,7 @@ How the suite is organised, and how to run one test of it.
 ```console
 $ cd "$ASTRA_TOOLS"
 $ cat astra-spec.pin
-e5fe476bd41a77d8c35dd7fee27cc779383f89b4
+8a84440c234c7d1b5da1fa5ec6c34a61b44887d7
 $ python -m pytest -q -p no:cacheprovider --collect-only | sed -n 's/::.*//p' | sort | uniq -c | sort -rn | head -8
     132 tests/test_fixtures.py
     124 tests/test_conformance.py
@@ -817,14 +812,15 @@ the tests that passed, by id.
 
 What to notice:
 
-- The oracle is astra-spec (design §1, principle 6, which names its fixtures, examples and
-  sections), now through its conformance suite (design §4.11), at the commit in
-  `astra-spec.pin`. `test_fixtures.py` runs the suite's documents (parse and schema layers),
-  `test_conformance.py` its 123 analysis cases, and one test that some are found.
+- The oracle is astra-spec, its conformance suite and its examples (CLAUDE.md: "argue from
+  it, its conformance suite and its examples"), at the commit in `astra-spec.pin`.
+  `test_fixtures.py` runs the suite's documents, in astra-spec's `tests/data/` (parse and
+  schema layers), `test_conformance.py` its 123 analysis cases, in `conformance/analyses/`, and
+  one test that some are found.
 - `test_codes.py` has one case per validator code, 34: rules.json's 31 and astra-tools' own
   three, and two tests that compare `CASES` and `unchecked` with the catalogue. The modules
-  beside it, one per section (`test_decisions.py`, `test_inputs.py`, …), hold each rule's
-  breaking and keeping cases in full, and the design §4.13 cases.
+  beside it, one per subject (`test_decisions.py`, `test_inputs.py`, …), hold each rule's
+  breaking and keeping cases in full, and the cases where a rule goes unchecked.
 - Switches have modules of their own: `test_switches.py` for binding and the validator's rules
   on them, `test_switches_plan.py` for the plan, the view and the check through them. The
   conformance cases from 065 to 124 are about switches and what a universe uses (four of them
@@ -840,11 +836,11 @@ Under the hood:
   suite runs against whatever astra-spec the environment has. An autouse fixture gives every
   test a cache of its own (`tests/conftest.py:51`), and `build` (`tests/conftest.py:120`) is a
   runner that writes bytes and records without running a recipe.
-- `test_codes.py`: `CASES` (`tests/test_codes.py:72`) maps each code to its section, its root's
-  `astra.yaml` and the pointer it is reported at; the module fixture (`:361`) builds one
-  repository with a folder per code; `test_every_validator_code_has_a_case` (`:403`) compares
-  `CASES` with the catalogue, and the test (`:413`) is parametrised over
-  `Catalogue.load().codes("validator")` (`:400`).
+- `test_codes.py`: `CASES` (`tests/test_codes.py:71`) maps each code to its root's
+  `astra.yaml`, the files committed beside it, and the pointer it is reported at; the module
+  fixture (`:332`) builds one repository with a folder per code;
+  `test_every_validator_code_has_a_case` (`:374`) compares `CASES` with the catalogue, and the
+  test (`:384`) is parametrised over `Catalogue.load().codes("validator")` (`:371`).
 - `test_conformance.py`: each case's `files/` is copied, then its `setup.sh` runs, or else one
   commit of every file (`tests/test_conformance.py:45`), with a fixed identity and date, as this
   tour's setups do (`:22`). The test (`:76`) compares `valid`, then each `must_report` entry's
@@ -913,12 +909,12 @@ $ git checkout --quiet astra.yaml
   selected where the pin reads it, and the case taken (Results *made from*). A later change of
   either option, or of the case it takes, makes it stale again, whatever bytes result.
 - With `hubr`, `huber` selects an option that names nothing, so what `fitted` takes there is
-  undetermined (design §4.13 case 6; `None` from `Meaning.taken`,
-  `src/astra/universes.py:625`), and so is the planning of what is reached only through it:
+  undetermined (`None` from `Meaning.taken`,
+  `src/astra/universes.py:617`), and so is the planning of what is reached only through it:
   `fit#huber`, and `comparison`, which reads it, so `plan._reads` gives `None`
-  (`src/astra/plan.py:394`) and `visit` leaves it out.
-- Case 12: neither gets statuses, and nor does the evidence, which cites `comparison`
-  (`src/astra/check.py:577-578`). The summary line says so, in astra-tools' own words
+  (`src/astra/plan.py:391`) and `visit` leaves it out.
+- Neither gets statuses, and nor does the evidence, which cites `comparison`
+  (`src/astra/check.py:568-569`). The summary line says so, in astra-tools' own words
   (`src/astra/cli/text/check.py:67`). `fit#ols` keeps its: in `ols`, `fitted` takes `fit`.
 
 </details>
@@ -971,7 +967,7 @@ $ git checkout --quiet results/huber/fit.json
 
 `ABSENT_RESULT` is a `SHOULD`, a warning, and absent bytes don't fail the check: `ok` stays True.
 `comparison` stays unchanged: it compares the hash `fit#huber`'s record gives with the one it
-recorded, not the file (`src/astra/check.py:505`).
+recorded, not the file (`src/astra/check.py:497`).
 
 </details>
 
@@ -985,8 +981,8 @@ recorded, not the file (`src/astra/check.py:505`).
 ```console
 $ cd "$ASTRA_TOOLS"
 $ git grep -n -e '"RESULT_IN_TWO_PLACES"' -e '"INVALID_SYNTAX"' -e '"REMOTE_UNREACHABLE"' -e '"MISPLACED_RECORD"' -- src/astra
-src/astra/check.py:64:        "MISPLACED_RECORD",
-src/astra/check.py:323:                reasons.append(self.reason("MISPLACED_RECORD", message, at))
+src/astra/check.py:61:        "MISPLACED_RECORD",
+src/astra/check.py:318:                reasons.append(self.reason("MISPLACED_RECORD", message, at))
 src/astra/diagnostics.py:73:                "REMOTE_UNREACHABLE",
 src/astra/load.py:30:CODES = frozenset({"INVALID_SYNTAX"})
 src/astra/load.py:107:            raise ParseError("INVALID_SYNTAX", message)
@@ -998,10 +994,10 @@ src/astra/load.py:169:        raise ParseError("INVALID_SYNTAX", f"a record is U
 src/astra/load.py:172:        raise ParseError("INVALID_SYNTAX", message, error.lineno, error.colno) from None
 src/astra/load.py:180:            raise ParseError("INVALID_SYNTAX", message)
 src/astra/load.py:186:    raise ParseError("INVALID_SYNTAX", f"{text} isn't a JSON number")
-src/astra/rules/commits.py:40:    {"COMMIT_NOT_FOUND", "COMMIT_NOT_ANCESTOR", "REMOTE_UNREACHABLE", "DECLARED_ANALYSIS_INVALID"}
-src/astra/rules/commits.py:77:                yield context.diagnostic("REMOTE_UNREACHABLE", message, at)
-src/astra/rules/driving.py:49:        "RESULT_IN_TWO_PLACES",
-src/astra/rules/driving.py:302:            yield context.diagnostic("RESULT_IN_TWO_PLACES", message, place, [related])
+src/astra/rules/commits.py:39:    {"COMMIT_NOT_FOUND", "COMMIT_NOT_ANCESTOR", "REMOTE_UNREACHABLE", "DECLARED_ANALYSIS_INVALID"}
+src/astra/rules/commits.py:76:                yield context.diagnostic("REMOTE_UNREACHABLE", message, at)
+src/astra/rules/driving.py:47:        "RESULT_IN_TWO_PLACES",
+src/astra/rules/driving.py:300:            yield context.diagnostic("RESULT_IN_TWO_PLACES", message, place, [related])
 $ cd "$TOUR/work/06/build/line-fit"
 ```
 
@@ -1009,7 +1005,7 @@ $ cd "$TOUR/work/06/build/line-fit"
 - `INVALID_SYNTAX` is the parse layer's, `load.py`, for both kinds of file: it raises
   `ParseError`, which binding (`src/astra/stack.py:305`) and `read_record`
   (`src/astra/records.py:140`) turn into a diagnostic, or a reason of `INVALID_RECORD`.
-- `REMOTE_UNREACHABLE` is astra-tools' own (design §3): its rule is in `OWN`, and the module
+- `REMOTE_UNREACHABLE` is astra-tools' own: its rule is in `OWN`, and the module
   of analyses from a commit, `rules/commits.py`, reports it.
 - `MISPLACED_RECORD` is a rule of the check layer, so `check.py`, as a `Reason`, not a
   `Diagnostic`.
@@ -1030,7 +1026,7 @@ tests/test_plan.py
 tests/test_switches.py
 tests/test_universes.py
 $ git grep -n 'in selection.message' -- tests
-tests/test_decisions.py:98:    assert "`a`, `b`" in selection.message
+tests/test_decisions.py:99:    assert "`a`, `b`" in selection.message
 $ python -m pytest -q -p no:cacheprovider tests/test_decisions.py
 ....                                                                     [100%]
 4 passed in …s
@@ -1040,7 +1036,7 @@ $ cd "$TOUR/work/06/build/line-fit"
 `test_decisions.py`, the test of `rules/decisions.py`, checks a fragment of the message as well
 as the pointers, the level, the line and the column. Tests compare codes, places, and fragments
 of messages where a message must say something; never a rule's statement, which comes from
-rules.json (design §3).
+rules.json.
 
 </details>
 
@@ -1079,7 +1075,7 @@ $ cd ../line-fit
 - With it, the stand-in at the path gives the content's hash and size, and the checker compares
   those, never the stand-in's own bytes
   ([Results](https://astra-spec.org/0.1/specification/#results) *made from*;
-  `src/astra/check.py:515`): unchanged.
+  `src/astra/check.py:507`): unchanged.
 
 </details>
 
@@ -1089,14 +1085,14 @@ $ cd ../line-fit
   (`History`, a query object, and `init`'s `(path, made)` tuple aside). All but `bind` and
   `init` validate the whole stack first: `plan`, `view` and `history` raise
   `InvalidAnalysisError` on a broken `MUST`; `check` gives statuses to the results whose
-  planning is determined, with the errors (design §4.13 case 12).
+  planning is determined, with the errors.
 - A `Stack` (identities, members, every address resolved once) is what rules, plan, view and
   check are functions of; a `CheckReport` is results, places, statuses and reasons, then
   evidence, walkable in a few lines.
 - The four JSON shapes are astra-tools' own, made by hand-written `to_json` methods; `--json`
   prints exactly those dicts, and the exit codes belong to the CLI.
 - A diagnostic traces as message, code, `Catalogue.rule` (rules.json's row), then
-  `git grep '"CODE"'`, and the module's section: validator codes in `rules/<section>.py`
+  `git grep '"CODE"'`, and the module's subject: validator codes in `rules/<subject>.py`
   (`NOT_IN_REPOSITORY` in `validate.py`), check codes in `check.py`, parse in `load.py`, schema
   through `contract.py`'s error map, and `UNSUPPORTED_SPEC_VERSION` in `contract.py` itself.
 - Environment schemes and stand-ins plug in through the entry-point groups `astra.environments`
@@ -1104,5 +1100,5 @@ $ cd ../line-fit
   add its own.
 - The code keeps git behind its binary, writes atomically and holds no module-level mutable
   state, though plug-ins are read from the installed distributions at each call; it holds no
-  `OPEN(` marker, as design §5 has no open question; its tests take astra-spec's conformance
-  suite as the oracle.
+  `OPEN(` marker, as no question of the specification's meaning is open; its tests take
+  astra-spec's conformance suite as the oracle.
