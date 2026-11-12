@@ -2,7 +2,7 @@ spec_version: "0.1.0"
 
 analyses:
   noisy:
-    url: file:///path/to/noisy-line
+    url: https://astra-examples.invalid/noisy-line
     commit: "0000000000000000000000000000000000000000"
 
 decisions:

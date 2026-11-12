@@ -16,26 +16,26 @@ $ sh setup/06.sh
   noisy-line c94c7b063ef9 Generate noisy points around a line
   noisy-line 2c5197a98df7 Build the points
 2. line-fit declares noisy-line at that commit, and is built and committed
-  line-fit 81d441927eea Fit noisy-line's points by least squares and by the Huber loss
-  line-fit b137cfed5275 Build the fits and their comparison
+  line-fit 2fc9ea1f101a Fit noisy-line's points by least squares and by the Huber loss
+  line-fit 33c33b131e54 Build the fits and their comparison
 3. noisy-line draws twice as many points, and is built again
   noisy-line 228881854072 Draw 60 points
   noisy-line 18cfe9d5695d Build the points again
 4. line-fit declares noisy-line's new commit, and is built again
-  line-fit d2076b7db726 Read noisy-line's 60 points
-  line-fit 7631b7b9da97 Build the fits and their comparison again
+  line-fit 301cf1e714ea Read noisy-line's 60 points
+  line-fit 8ac9f1d2d980 Build the fits and their comparison again
 5. the Huber option's setting changes, and what it changes is built again
-  line-fit eb6f8b9be6a6 Huber: turn linear from 1.0 robust standard deviations
-  line-fit 1fd25e98b790 Build the Huber fit and the comparison again
+  line-fit 6d332f6b56ac Huber: turn linear from 1.0 robust standard deviations
+  line-fit 0b908983c093 Build the Huber fit and the comparison again
 6. the Huber option's setting changes back, and what it changes is built again
-  line-fit 03c7a9dd58fe Huber: back to 1.345 robust standard deviations, the usual choice
-  line-fit 7b0f45b9aee1 Build the Huber fit and the comparison at 1.345
+  line-fit 32e0ccad54bd Huber: back to 1.345 robust standard deviations, the usual choice
+  line-fit 0a13fa5d80bf Build the Huber fit and the comparison at 1.345
 7. noisy-line pushes twice as many points above the line, and is built again
   noisy-line 3732bd7f8be4 Push 6 points above the line, not 3
   noisy-line 2dcf20f515e3 Build the points with 6 outliers
 8. line-fit declares noisy-line's newest commit, and is built again
-  line-fit f9662d2fec04 Read noisy-line's points with 6 outliers
-  line-fit c232c1ae172e Build the fits and their comparison with 6 outliers
+  line-fit f42a01c5c78b Read noisy-line's points with 6 outliers
+  line-fit 424c092500b4 Build the fits and their comparison with 6 outliers
 $ cd work/06/build/line-fit
 ```
 
@@ -52,9 +52,9 @@ $ cd work/06/build/line-fit
   every id from noisy-line's `Build the points` on differs (the setup warns), and so do the
   `cpython-3.14` lines of steps 5 and 8 and of Try 5. The README's *Before you start* says how
   to get 3.14.
-- line-fit's ids differ from the examples README's: line-fit names noisy-line by a `file://`
-  URL, here under `work/06`. So they match the chapter's only with the tour at this path,
-  `/home/r/Projects/LightconeResearch/astra-tour`, which `…/tour` stands for in the output.
+- line-fit's ids are the examples README's: line-fit names noisy-line by the URL
+  `https://astra-examples.invalid/noisy-line`, which `env.sh` has git read from
+  `work/build/noisy-line`, a link the setup makes to `work/06/build` (the README's *URLs*).
 - The setup also writes `work/06/plugin`, used in step 8.
 - Steps 1 to 5 are one Python session. If you leave it, start again from step 1's imports.
 
@@ -138,7 +138,7 @@ Identity(folder='', commit=None)
 ...     print(f"{identity!s:52} {member.file}  {member.url}")
 ...
 .                                                    astra.yaml  None
-. at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206        astra.yaml  file://…/tour/work/06/build/noisy-line
+. at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206        astra.yaml  https://astra-examples.invalid/noisy-line
 >>> for r in stack.resolutions:
 ...     print(f"{r.field:9} {r.written:13} {r.element}")
 ...
@@ -311,7 +311,7 @@ the evidence.
 >>> status.place.address, status.record_status, status.bytes_status, status.committed, status.environment
 ('fit#ols', 'unchanged', 'present', True, ())
 >>> status.record.commit, status.record.environment
-('f9662d2fec04291fbcc9bbb0ad679126d1b3ecd4', 'urn:astra-examples:cpython-3.14')
+('f42a01c5c78b9e66e607c7504d496f89a67a637a', 'urn:astra-examples:cpython-3.14')
 >>> status.record.inputs
 (RecordedInput(entry='noisy.points', content_hash='sha256:f207f31c1130d630505807629ce9ee21d491851372f4a22de2fe15f3c8d58c47', size=1117),)
 >>> from pathlib import Path
@@ -330,7 +330,7 @@ the evidence.
 >>> for address, why in stale(api.check()):
 ...     print(address, why)
 ...
-fit#huber ['`method` selects `ols` in `huber`, where it selected `huber` at f9662d2fec04']
+fit#huber ['`method` selects `ols` in `huber`, where it selected `huber` at f42a01c5c78b']
 comparison ['`fit#huber`, which it reads, is stale']
 comparison ['`comparison` cites `comparison`, whose record is stale']
 >>> narrowed = api.check(universes=["ols"])
@@ -341,11 +341,11 @@ comparison ['`comparison` cites `comparison`, whose record is stale']
 True
 >>> old = api.check(at="HEAD~1")
 >>> old.at
-'f9662d2fec04291fbcc9bbb0ad679126d1b3ecd4'
+'f42a01c5c78b9e66e607c7504d496f89a67a637a'
 >>> list(stale(old))
 [('fit#ols', ['`points`, which it reads through `noisy.points`, was made again since, with other bytes than it read']), ('fit#huber', ['`points`, which it reads through `noisy.points`, was made again since, with other bytes than it read']), ('comparison', ['`fit#ols`, which it reads, is stale', '`fit#huber`, which it reads, is stale']), ('comparison', ['`comparison` cites `comparison`, whose record is stale'])]
 >>> [version.commit[:7] for version in api.history().timeline("fit#huber")]
-['c232c1a', '7b0f45b', '1fd25e9', '7631b7b', 'b137cfe']
+['424c092', '0a13fa5', '0b90898', '8ac9f1d', '33c33b1']
 ```
 
 What to notice:
@@ -355,7 +355,7 @@ What to notice:
 - A `Status` per place: `record_status`, `bytes_status`, `committed` (HEAD has the record at its
   place, byte for byte), `reasons`, the parsed `record`, and `environment`, empty: no scheme is
   registered yet (step 8).
-- The record's commit is f9662d2, the commit its recipe ran from, one before c232c1a, the commit
+- The record's commit is f42a01c, the commit its recipe ran from, one before 424c092, the commit
   that holds the record.
 - The stale listing walks two collections: each place of each result, then the evidence. A
   `STALE_RESULT` message says what changed since the record's commit (12 characters of it); a
@@ -879,8 +879,8 @@ $ astra check
 .astra/records/ols/fit.json  fit#ols  unchanged  present
 .astra/records/huber/fit.json  fit#huber  unchanged  present
 .astra/records/comparison.json  comparison  stale  present
-  error STALE_RESULT its recipe's command isn't the one it had at f9662d2fec04
-  error STALE_RESULT its inputs are [`fitted#ols`, `fitted#huber`], in that order, where they were [`fit#ols`, `fit#huber`] at f9662d2fec04
+  error STALE_RESULT its recipe's command isn't the one it had at f42a01c5c78b
+  error STALE_RESULT its inputs are [`fitted#ols`, `fitted#huber`], in that order, where they were [`fit#ols`, `fit#huber`] at f42a01c5c78b
 astra.yaml
   58:19 error STALE_EVIDENCE `comparison` cites `comparison`, whose record is stale
 astra.yaml: 4 place(s) of planned results, 3 unchanged, 1 stale, 0 missing; 0 absent
@@ -1048,7 +1048,7 @@ rules.json.
 
 ```console
 $ cd ../noisy-line
-$ printf 'tour-pointer\nsha256:%s %s\n' "$(sha256sum config.json | cut -d' ' -f1)" "$(wc -c < config.json)" > pointer
+$ printf 'tour-pointer\nsha256:%s %s\n' "$(shasum -a 256 config.json | cut -d' ' -f1)" "$(wc -c < config.json | tr -d ' ')" > pointer
 $ mv pointer config.json
 $ cat config.json
 tour-pointer

@@ -24,6 +24,9 @@ find "$TOUR/work/02" -name __pycache__ -type d -prune -exec rm -rf {} +
 cd "$TOUR/work/02"
 
 python build.py
+# The chapter's astra commands read the examples' URLs from work/build, through env.sh's
+# url.<copy>.insteadOf: make it this chapter's copy.
+ln -sfn 02/build "$TOUR/work/build"
 
 cat > judge.py <<'EOF'
 """Judge one file by the parse and schema layers alone, as astra-tools does inside it.

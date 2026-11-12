@@ -4,7 +4,7 @@
 It builds what the analysis in PATH (the current folder by default) needs, in the plan's
 order, each result at most once: every planned result that isn't `unchanged` and `present`,
 every one that reads a result built earlier in the same run, and those --rebuild names. It
-keeps the runner rules of the specification's §21:
+keeps the specification's runner rules, the runner layer of its Rules:
 
 - UNCOMMITTED_CHANGES: before each recipe, it refuses to run while the checkout holds changes
   other than the records and results of a run, so every recipe runs from a commit (HEAD);
@@ -19,8 +19,8 @@ If a recipe fails, the bytes it was replacing are put back.
 
 By default it runs in the working tree, which must then hold no uncommitted change. With
 --worktree it runs in a checkout of HEAD of its own, which astra-tools makes in its cache
-(`Repository.worktree`), so you can go on editing while it runs: §21 judges uncommitted
-changes in the checkout a recipe runs in. Each result finished there is then moved into the
+(`Repository.worktree`), so you can go on editing while it runs: UNCOMMITTED_CHANGES is
+about the checkout a recipe runs in. Each result finished there is then moved into the
 working tree, its bytes and then its record, and no git command touches the working tree
 (`records.land`); a record there from a later commit is kept. You commit them when you choose.
 
@@ -113,7 +113,7 @@ def run(folder: Path, rebuild: set[str]) -> list[Result]:
     for checked in report.results:
         result = checked.result
         if result.read_only:
-            continue  # read through its record at a commit, never built here (§17)
+            continue  # read through its record at a commit, never built here (REBUILT_FROM_COMMIT)
         done = all(s.record_status == "unchanged" and s.bytes_status == "present"
                    for s in checked.statuses)
         reads_new = any(read.result is not None and id(read.result) in built

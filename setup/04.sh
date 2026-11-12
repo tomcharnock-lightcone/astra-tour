@@ -9,7 +9,7 @@
 # - work/04/kept.py: prints what astra-tools' hash cache keeps for a file.
 # - work/04/shell.sh: to source in your shell before the chapter's commands: a fixed author,
 #   committer and date, and none of your git configuration, so that your commit ids are the
-#   chapter's; and jq through nix where there is none on PATH.
+#   chapter's; and a word where no jq is on PATH, since the chapter uses it.
 #
 # It removes work/04 first, and nothing else.
 set -eu
@@ -134,7 +134,7 @@ cat > "$W/record.py" <<'EOF'
 Run it in the analysis's folder, right after running the recipe there from a checkout of HEAD
 with no change, giving the address of one of the planned results, as `astra plan` lists them.
 It writes the result's record at each of its places, naming HEAD as the commit the recipe ran
-from: true only if you ran it from HEAD with no change (FALSE_RECORD, §21).
+from: true only if you ran it from HEAD with no change (FALSE_RECORD).
 """
 
 import sys
@@ -192,7 +192,7 @@ export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
 export GIT_AUTHOR_NAME=Tour GIT_AUTHOR_EMAIL=tour@astra.invalid
 export GIT_COMMITTER_NAME=Tour GIT_COMMITTER_EMAIL=tour@astra.invalid
 export GIT_AUTHOR_DATE=2026-01-01T12:00:00Z GIT_COMMITTER_DATE=2026-01-01T12:00:00Z
-command -v jq >/dev/null || jq() { nix shell 'nixpkgs#jq' --command jq "$@"; }
+command -v jq >/dev/null || echo "jq isn't on your PATH: install it, since steps 4 and 6 use it" >&2
 EOF
 
 cd "$W/words"
@@ -209,6 +209,6 @@ version=$(python3 -c 'import platform; print(".".join(platform.python_version_tu
 if [ "$version" != 3.14 ]; then
   echo "setup/04.sh: python3 is $version, not 3.14: run.py's records name it, so the ids of" \
        "the commits that hold them (step 5 on) differ from the chapter's. For the chapter's" \
-       "ids, run ./bootstrap.sh inside nix develop, which builds astra-tools' environment on" \
-       "3.14; then source env.sh again and rerun sh setup/04.sh" >&2
+       "ids, run ./bootstrap.sh, which builds astra-tools' environment on Python 3.14; then" \
+       "source env.sh again and rerun sh setup/04.sh" >&2
 fi

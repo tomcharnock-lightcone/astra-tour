@@ -8,24 +8,23 @@ validator layer, and `check_record` for records.
 ## Setup
 
 ```console
-$ cd ~/Projects/LightconeResearch/astra-tour
 $ source env.sh
 astra: …/astra-tools/.venv/bin/astra (astra, version 0.2.19.dev…)
 work:  …/tour/work
 $ python3 --version
-Python 3.14.8
+Python 3.14.…
 $ sh setup/02.sh
 1. noisy-line is built and committed
   noisy-line c94c7b063ef9 Generate noisy points around a line
   noisy-line 2c5197a98df7 Build the points
 …
 8. line-fit declares noisy-line's newest commit, and is built again
-  line-fit 907af16f9526 Read noisy-line's points with 6 outliers
-  line-fit e889cebaabe4 Build the fits and their comparison with 6 outliers
+  line-fit f42a01c5c78b Read noisy-line's points with 6 outliers
+  line-fit 424c092500b4 Build the fits and their comparison with 6 outliers
 two-names 041f343e9bf6 One result, reached through two chains of declarations
 ```
 
-(Steps 2 to 7 of the build are cut, at the `…`.)
+(Run them from the tour's folder. Steps 2 to 7 of the build are cut, at the `…`.)
 
 The commit ids hold only where `python3 --version` prints 3.14 (any patch release) after
 `source env.sh`: run.py's records name the `python3` on PATH by its version
@@ -37,16 +36,17 @@ step 7's `REMOTE_UNREACHABLE` and in Try 4. Every code, message, line and column
 `work/02/` now holds:
 
 - `build/noisy-line` and `build/line-fit`: the examples, built by `build.py` with their
-  eight-step history. line-fit's ids differ from the examples README's, since line-fit names
-  noisy-line by its absolute `file://` URL, here under `work/02/build`. So they are the
-  chapter's only with the tour in its own folder (the README's *Paths*).
+  eight-step history, and the examples README's ids. line-fit names noisy-line by the URL
+  `https://astra-examples.invalid/noisy-line`, which stands for noisy-line's repository and
+  which no network serves: `env.sh` has git read it from `work/build/noisy-line`, and the
+  setup makes `work/build` a link to `work/02/build` (the README's *URLs*).
 - `two-names/`: astra-spec's conformance case 056, a result with two names, for step 7.
 - `judge.py`: about 50 lines that run the parse and schema layers on one file, as astra-tools does
   inside, and print each schema error's absolute keyword location. Read it before step 4.
 
 Every step breaks a file and puts it back with `git checkout`. `git status --short` in either
-repository should print nothing between steps. Some JSON below is filtered with jq; if it isn't
-on PATH: `jq() { nix shell 'nixpkgs#jq' --command jq "$@"; }`.
+repository should print nothing between steps. Some JSON below is filtered with jq, which the
+README's *Before you start* asks for.
 
 ## 1. The verdict and its shape
 
@@ -352,7 +352,7 @@ $ git checkout -q astra.yaml
 $ grep -A2 '^analyses' ../../examples/line-fit/astra.yaml
 analyses:
   noisy:
-    url: file:///path/to/noisy-line
+    url: https://astra-examples.invalid/noisy-line
 $ astra validate ../../examples/line-fit
 astra.yaml
   error NOT_IN_REPOSITORY the analysis's folder isn't in the working tree of a git repository: make one with `git init`, or move the analysis into one
@@ -491,7 +491,7 @@ validator, astra-tools' own
   UNSUPPORTED_SPEC_VERSION MUST Every `astra.yaml` of the stack states a `spec_version` whose minor version astra-tools has the schema of (0.1)
   REMOTE_UNREACHABLE MUST Every commit the stack gets from a remote can be got
   COMMIT_NOT_ANCESTOR SHOULD A declaration with a `path` and a `commit` names, in the repository that holds the declaring file, an ancestor of the commit the declaration is in or, read in the working tree, HEAD or an ancestor of it
-$ perl -pi -e 's|url: file://.*|url: file:///nowhere/noisy-line|' astra.yaml && astra validate
+$ perl -pi -e 's|url: .*|url: file:///nowhere/noisy-line|' astra.yaml && astra validate
 astra.yaml
   5:5 error REMOTE_UNREACHABLE the commit `2dcf20f515e3eecf7e2126c182c54dd5f0f8f206` can't be fetched from `file:///nowhere/noisy-line`, and no earlier fetch kept it: check the URL and the commit, and that git can reach the remote (with --offline, nothing is fetched)
 astra.yaml: invalid, 1 error(s), 0 warning(s)

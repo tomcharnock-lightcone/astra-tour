@@ -26,8 +26,8 @@ $ cd work/04/words && source ../shell.sh
 - `../record.py` and `../kept.py` are two short scripts on astra-tools' Python modules (steps 3
   and 10).
 - `../shell.sh` exports a fixed git author, committer and date, and
-  `GIT_CONFIG_GLOBAL=/dev/null`, so that your commits get the chapter's ids. It also defines
-  `jq` through `nix shell nixpkgs#jq` if none is on your PATH. It lasts as long as the shell:
+  `GIT_CONFIG_GLOBAL=/dev/null`, so that your commits get the chapter's ids, and says so if no
+  `jq` is on your PATH, since steps 4 and 6 use it. It lasts as long as the shell:
   close this shell when you finish the chapter, since a commit made in it elsewhere would get
   the Tour identity and date, and none of your signing configuration.
 - run.py's records name the `python3` on PATH by its version, here
@@ -157,7 +157,7 @@ $ cat ../record.py
 Run it in the analysis's folder, right after running the recipe there from a checkout of HEAD
 with no change, giving the address of one of the planned results, as `astra plan` lists them.
 It writes the result's record at each of its places, naming HEAD as the commit the recipe ran
-from: true only if you ran it from HEAD with no change (FALSE_RECORD, §21).
+from: true only if you ran it from HEAD with no change (FALSE_RECORD).
 """
 
 import sys
@@ -274,7 +274,7 @@ $ cat .astra/records/words/count.json
   "size": 31,
   "spec_version": "0.1.0"
 }
-$ sha256sum results/words/count.json data/poem.txt
+$ shasum -a 256 results/words/count.json data/poem.txt
 88f81c6066bf6a4b6df869f0e08ea95f582105b40a7c56f71585cc8a3e9207bb  results/words/count.json
 7797676452e0c76c1cfbfbb4f77f33c081ee499ee464df25fadf321868402755  data/poem.txt
 $ wc -c results/words/count.json data/poem.txt
@@ -312,7 +312,7 @@ What to notice
 
 - Every level is closed (`additionalProperties: false`): a 0.1 record holds these fields and no
   other.
-- `sha256sum` and `wc -c` give the record's hashes and sizes: the files' own.
+- `shasum -a 256` and `wc -c` give the record's hashes and sizes: the files' own.
 - The keys are sorted by `write_record`, so `size` comes after `generated_by`. The items of
   `inputs` keep the order of the output's `inputs`, though their order carries no meaning (the
   schema's description of `inputs`; `MISSING_RECORD_INPUTS` matches items by `entry`).
@@ -620,13 +620,13 @@ only in general terms ("such as a large-file pointer"); which ones count is astr
 Git LFS pointers, git-annex links and DVC files. It fetches none of them.
 
 ```console
-$ printf 'version https://git-lfs.github.com/spec/v1\noid sha256:%s\nsize %s\n' "$(sha256sum < data/poem.txt | cut -c1-64)" "$(wc -c < data/poem.txt)" > ../pointer
+$ printf 'version https://git-lfs.github.com/spec/v1\noid sha256:%s\nsize %s\n' "$(shasum -a 256 < data/poem.txt | cut -c1-64)" "$(wc -c < data/poem.txt | tr -d ' ')" > ../pointer
 $ mv ../pointer data/poem.txt
 $ cat data/poem.txt
 version https://git-lfs.github.com/spec/v1
 oid sha256:7797676452e0c76c1cfbfbb4f77f33c081ee499ee464df25fadf321868402755
 size 140
-$ sha256sum data/poem.txt
+$ shasum -a 256 data/poem.txt
 be2e28d7887bfd396ff0208bf79a92de653fbe95e9b0331bcb34b1dc30cd83a3  data/poem.txt
 $ astra check | tail -1
 astra.yaml: 3 place(s) of planned results, 3 unchanged, 0 stale, 0 missing; 0 absent
@@ -692,7 +692,7 @@ $ touch data/poem.txt && astra check > /dev/null && python ../kept.py data/poem.
 no entry for the file as it is now: a check hashes it
 $ sleep 2; astra check > /dev/null; python ../kept.py data/poem.txt
 sha256:7797676452e0c76c1cfbfbb4f77f33c081ee499ee464df25fadf321868402755 140 kept: a check takes it, and doesn't read the file
-$ sha256sum data/poem.txt
+$ shasum -a 256 data/poem.txt
 7797676452e0c76c1cfbfbb4f77f33c081ee499ee464df25fadf321868402755  data/poem.txt
 ```
 
@@ -979,7 +979,7 @@ exit 0
    ```sh
    sleep 2; astra check > /dev/null; python ../kept.py data/poem.txt
    cp -p data/poem.txt ../poem.before
-   printf K | dd of=data/poem.txt bs=1 seek=2 conv=notrunc status=none
+   printf K | dd of=data/poem.txt bs=1 seek=2 conv=notrunc 2>/dev/null
    touch -r ../poem.before data/poem.txt
    ```
 
@@ -992,7 +992,7 @@ exit 0
 $ sleep 2; astra check > /dev/null; python ../kept.py data/poem.txt
 sha256:7797676452e0c76c1cfbfbb4f77f33c081ee499ee464df25fadf321868402755 140 kept: a check takes it, and doesn't read the file
 $ cp -p data/poem.txt ../poem.before
-$ printf K | dd of=data/poem.txt bs=1 seek=2 conv=notrunc status=none
+$ printf K | dd of=data/poem.txt bs=1 seek=2 conv=notrunc 2>/dev/null
 $ touch -r ../poem.before data/poem.txt
 $ head -1 data/poem.txt
 I Keep a record of each run,

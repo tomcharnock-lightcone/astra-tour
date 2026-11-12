@@ -27,6 +27,14 @@ class Session:
         self.cwd = HERE
         self.env = {**os.environ}
         self.env.pop("ASTRA_CACHE_DIR", None)
+        self.env.update({  # commits of a fixed identity, and none of the user's git settings
+            "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_AUTHOR_NAME": "Ada Example", "GIT_AUTHOR_EMAIL": "ada@example.org",
+            "GIT_COMMITTER_NAME": "Ada Example", "GIT_COMMITTER_EMAIL": "ada@example.org",
+        })
+        settings = re.compile(r"GIT_CONFIG_(COUNT|KEY_\d+|VALUE_\d+)")  # the README's own
+        for name in [name for name in self.env if settings.fullmatch(name)]:
+            self.env.pop(name)
         self.env["NO_COLOR"] = "1"
 
     def run(self, command: str) -> str:

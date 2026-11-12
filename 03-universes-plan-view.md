@@ -21,8 +21,7 @@ $ cd work/03/readings
   commit (fixed author and date, so the id is `d2ea15f` for you too) holding the analysis, its
   input and three small scripts. Run it again, from the tour's folder, whenever you want the
   starting state back.
-- Steps 7 and 8 and some answers use `jq`. If it isn't on your PATH, start with
-  `nix shell 'nixpkgs#jq'`, then `source env.sh` in that shell.
+- Steps 7 and 8 and some answers use `jq`, which the README's *Before you start* asks for.
 - Every step runs in `work/03/readings`. The steps and exercises that edit `astra.yaml` end
   with `git checkout --quiet astra.yaml`.
 - Like every chapter, this one cites the published specification, as the README's *Citations*

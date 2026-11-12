@@ -18,10 +18,10 @@ and `check.py` rebuilds everything and checks that every command below prints wh
 
 ## Setting up
 
-You need git, Python 3.11 or later, and astra-tools from its `v0.1-rebuild` branch, here at
-`d7b20ec`, which reads ASTRA 0.1 at astra-spec `6c0ddb4`. Set it up as its CLAUDE.md's
-*Development* section says, then put its environment first on your PATH, so that `astra` and
-the Python that has astra-tools are the ones run:
+You need git 2.31 or later, Python 3.11 or later, and astra-tools from its `v0.1-rebuild`
+branch, here at `d14bf16`, which reads ASTRA 0.1 at astra-spec `8a84440`. Set it up as its
+CLAUDE.md's *Setup* says, then put its environment first on your PATH, so that `astra` and the
+Python that has astra-tools are the ones run:
 
     export PATH=/path/to/astra-tools/.venv/bin:$PATH
 
@@ -33,35 +33,37 @@ $ python build.py
   noisy-line c94c7b063ef9 Generate noisy points around a line
   noisy-line 2c5197a98df7 Build the points
 2. line-fit declares noisy-line at that commit, and is built and committed
-  line-fit 9f236ccb9bd6 Fit noisy-line's points by least squares and by the Huber loss
-  line-fit 0108bb956d64 Build the fits and their comparison
+  line-fit 2fc9ea1f101a Fit noisy-line's points by least squares and by the Huber loss
+  line-fit 33c33b131e54 Build the fits and their comparison
 3. noisy-line draws twice as many points, and is built again
   noisy-line 228881854072 Draw 60 points
   noisy-line 18cfe9d5695d Build the points again
 4. line-fit declares noisy-line's new commit, and is built again
-  line-fit 3032833ac1f0 Read noisy-line's 60 points
-  line-fit 84b91dce5699 Build the fits and their comparison again
+  line-fit 301cf1e714ea Read noisy-line's 60 points
+  line-fit 8ac9f1d2d980 Build the fits and their comparison again
 5. the Huber option's setting changes, and what it changes is built again
-  line-fit 3e45dccdacfa Huber: turn linear from 1.0 robust standard deviations
-  line-fit 8e3378d96e3a Build the Huber fit and the comparison again
+  line-fit 6d332f6b56ac Huber: turn linear from 1.0 robust standard deviations
+  line-fit 0b908983c093 Build the Huber fit and the comparison again
 6. the Huber option's setting changes back, and what it changes is built again
-  line-fit 8b637b90c974 Huber: back to 1.345 robust standard deviations, the usual choice
-  line-fit f03a04503999 Build the Huber fit and the comparison at 1.345
+  line-fit 32e0ccad54bd Huber: back to 1.345 robust standard deviations, the usual choice
+  line-fit 0a13fa5d80bf Build the Huber fit and the comparison at 1.345
 7. noisy-line pushes twice as many points above the line, and is built again
   noisy-line 3732bd7f8be4 Push 6 points above the line, not 3
   noisy-line 2dcf20f515e3 Build the points with 6 outliers
 8. line-fit declares noisy-line's newest commit, and is built again
-  line-fit 3db2bfb4848f Read noisy-line's points with 6 outliers
-  line-fit 70524159bb29 Build the fits and their comparison with 6 outliers
+  line-fit f42a01c5c78b Read noisy-line's points with 6 outliers
+  line-fit 424c092500b4 Build the fits and their comparison with 6 outliers
 ```
 
 Each step commits as an author with a fixed date, so the commit ids are the same each time
-you build in the same place with the same Python. line-fit names noisy-line by a `file://`
-URL, its absolute path, so its ids are these only where `build/` is where it was built for
-this README. Each record names the Python the recipes ran with, the `python3` on PATH by its
-version, here CPython 3.14, so from the first commit that holds a record, the ids are these
-only with that version. Moving the repositories to GitHub changes only the `url` line of
-line-fit's declaration, and with it line-fit's ids.
+you build with the same Python, wherever `build/` is. Each record names the Python the recipes
+ran with, the `python3` on PATH by its version, here CPython 3.14, so from the first commit that
+holds a record, the ids are these only with that version. line-fit names noisy-line by the URL
+`https://astra-examples.invalid/noisy-line`, which stands for noisy-line's repository and which
+no network serves: git reads it from `build/noisy-line` through the setting
+`url.<build/>.insteadOf`, which build.py gives git and the walk-through below sets too. Moving
+noisy-line to GitHub would change only that `url` line of line-fit's declaration, and with it
+line-fit's ids.
 
 ## The analyses
 
@@ -85,7 +87,7 @@ line-fit declares noisy-line at a commit, and reads its points as `noisy.points`
 ```yaml
 analyses:
   noisy:
-    url: file:///…/build/noisy-line
+    url: https://astra-examples.invalid/noisy-line
     commit: "2dcf20f515e3eecf7e2126c182c54dd5f0f8f206"
 decisions:
   method:
@@ -115,24 +117,28 @@ findings:
 ## Validating, describing and planning
 
 Work in line-fit's repository. astra-tools keeps the commits it fetches from noisy-line in its
-cache, here `build/cache`:
+cache, here `build/cache`, and git, which fetches them, reads noisy-line's URL from `build/`
+(through git's environment, which takes settings since git 2.31):
 
 ```console
 $ cd build/line-fit
 $ export ASTRA_CACHE_DIR="$PWD/../cache"
+$ export GIT_CONFIG_COUNT=1
+$ export GIT_CONFIG_KEY_0="url.file://$PWD/../.insteadOf"
+$ export GIT_CONFIG_VALUE_0=https://astra-examples.invalid/
 $ astra validate
 astra.yaml: valid, 0 error(s), 0 warning(s)
 $ astra validate ../noisy-line
 astra.yaml: valid, 0 error(s), 0 warning(s)
 $ astra info
 astra.yaml
-  analyses  noisy: astra.yaml at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206 from file:///home/r/Projects/LightconeResearch/worktrees/astra-examples-history/build/noisy-line
+  analyses  noisy: astra.yaml at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206 from https://astra-examples.invalid/noisy-line
   outputs   fit: table, json
             comparison: table, json
   decisions method: ols, huber
   universes ols
             huber
-astra.yaml at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206 from file:///home/r/Projects/LightconeResearch/worktrees/astra-examples-history/build/noisy-line
+astra.yaml at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206 from https://astra-examples.invalid/noisy-line
   inputs    config: config.json
   outputs   points: data, csv
 ```
@@ -195,7 +201,7 @@ $ astra check
 .astra/records/points.json at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206  points  unchanged  present
 .astra/records/ols/fit.json  fit#ols  unchanged  present
 .astra/records/huber/fit.json  fit#huber  stale  present
-  error STALE_RESULT `method` selects `ols` in `huber`, where it selected `huber` at 3db2bfb4848f
+  error STALE_RESULT `method` selects `ols` in `huber`, where it selected `huber` at f42a01c5c78b
 .astra/records/comparison.json  comparison  stale  present
   error STALE_RESULT `fit#huber`, which it reads, is stale
 astra.yaml
@@ -211,16 +217,16 @@ outliers, and nothing was built yet. Its records there were made from the points
 ```console
 $ astra check --at HEAD~1
 .astra/records/points.json at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206  points  unchanged  present
-.astra/records/ols/fit.json at 3db2bfb4848fe1ed2428acd6b1f17cd97ea76d4c  fit#ols  stale  present
+.astra/records/ols/fit.json at f42a01c5c78b9e66e607c7504d496f89a67a637a  fit#ols  stale  present
   error STALE_RESULT `points`, which it reads through `noisy.points`, was made again since, with other bytes than it read
-.astra/records/huber/fit.json at 3db2bfb4848fe1ed2428acd6b1f17cd97ea76d4c  fit#huber  stale  present
+.astra/records/huber/fit.json at f42a01c5c78b9e66e607c7504d496f89a67a637a  fit#huber  stale  present
   error STALE_RESULT `points`, which it reads through `noisy.points`, was made again since, with other bytes than it read
-.astra/records/comparison.json at 3db2bfb4848fe1ed2428acd6b1f17cd97ea76d4c  comparison  stale  present
+.astra/records/comparison.json at f42a01c5c78b9e66e607c7504d496f89a67a637a  comparison  stale  present
   error STALE_RESULT `fit#ols`, which it reads, is stale
   error STALE_RESULT `fit#huber`, which it reads, is stale
-astra.yaml at 3db2bfb4848fe1ed2428acd6b1f17cd97ea76d4c
+astra.yaml at f42a01c5c78b9e66e607c7504d496f89a67a637a
   53:19 error STALE_EVIDENCE `comparison` cites `comparison`, whose record is stale
-astra.yaml at 3db2bfb4848fe1ed2428acd6b1f17cd97ea76d4c: 4 place(s) of planned results, 1 unchanged, 3 stale, 0 missing; 0 absent
+astra.yaml at f42a01c5c78b9e66e607c7504d496f89a67a637a: 4 place(s) of planned results, 1 unchanged, 3 stale, 0 missing; 0 absent
 ```
 
 The next commit, HEAD, holds them built again: that is the check above, where every result is
@@ -234,16 +240,16 @@ on count back through:
 
 ```console
 $ git log --oneline
-7052415 Build the fits and their comparison with 6 outliers
-3db2bfb Read noisy-line's points with 6 outliers
-f03a045 Build the Huber fit and the comparison at 1.345
-8b637b9 Huber: back to 1.345 robust standard deviations, the usual choice
-8e3378d Build the Huber fit and the comparison again
-3e45dcc Huber: turn linear from 1.0 robust standard deviations
-84b91dc Build the fits and their comparison again
-3032833 Read noisy-line's 60 points
-0108bb9 Build the fits and their comparison
-9f236cc Fit noisy-line's points by least squares and by the Huber loss
+424c092 Build the fits and their comparison with 6 outliers
+f42a01c Read noisy-line's points with 6 outliers
+0a13fa5 Build the Huber fit and the comparison at 1.345
+32e0cca Huber: back to 1.345 robust standard deviations, the usual choice
+0b90898 Build the Huber fit and the comparison again
+6d332f6 Huber: turn linear from 1.0 robust standard deviations
+8ac9f1d Build the fits and their comparison again
+301cf1e Read noisy-line's 60 points
+33c33b1 Build the fits and their comparison
+2fc9ea1 Fit noisy-line's points by least squares and by the Huber loss
 ```
 
 Each version of a record is its file at a commit that changed it. The Huber fit was built five
@@ -253,25 +259,25 @@ step 8. Step 6 gave it the bytes of step 4 again, so those two versions have the
 ```console
 $ astra history timeline 'fit#huber'
 fit#huber  .astra/records/huber/fit.json
-  70524159bb294d6fdf3a64fcd419ca200da7d766
+  424c092500b46a00ce997c00104c080099ed6e08
     bytes        sha256:fdbc97616ab1d246f9c6ef4137a0dbc345623ce4d9547e7e541342e9c7b40cf4, 86 byte(s)
-    made at      3db2bfb4848fe1ed2428acd6b1f17cd97ea76d4c
+    made at      f42a01c5c78b9e66e607c7504d496f89a67a637a
     environment  urn:astra-examples:cpython-3.14
-  f03a04503999803cb19bfec6350f2990271d03b8
+  0a13fa5d80bf8218b99605779569e703e07ff242
     bytes        sha256:44c15377928affe5652ede77ce155a77160138143faba005313400d8497df07b, 86 byte(s)
-    made at      8b637b90c974dcb5db9ff6d2e6d8a09d42471b4b
+    made at      32e0ccad54bd46baa069326f6695bc6a5883551f
     environment  urn:astra-examples:cpython-3.14
-  8e3378d96e3a56f78ad953799849f941a5ee69c0
+  0b908983c093e4c219c48ccc12393277fc6e1f30
     bytes        sha256:72c18945d6a304e5887bca9bd3fa5628a8fa2dc33900083538d1fa1277aa7aa3, 86 byte(s)
-    made at      3e45dccdacfa3d8303d9f193005d2a4dc4190ba8
+    made at      6d332f6b56acd7a78ad0b8bbfae8872bc76426f5
     environment  urn:astra-examples:cpython-3.14
-  84b91dce5699cbf6251a2145fef2fac6ac8fc556
+  8ac9f1d2d98080c20b28933d9d8c5963550b5e4a
     bytes        sha256:44c15377928affe5652ede77ce155a77160138143faba005313400d8497df07b, 86 byte(s)
-    made at      3032833ac1f0a3c78a74633165901fd2d76f6814
+    made at      301cf1e714eac99c8edf4cd78b73f411056009f7
     environment  urn:astra-examples:cpython-3.14
-  0108bb956d644c326ee5d60437c182eae5b5b02a
+  33c33b131e54919cc3bcf7a3025a0d138df801a2
     bytes        sha256:6e373f83ec8711725574156cd02b6571e249e9b5c971fbb793d9055ea3396132, 86 byte(s)
-    made at      9f236ccb9bd6b54dfa774248e30f77006739392b
+    made at      2fc9ea1f101a851502f3bacfb2dc8d4a6cccbe49
     environment  urn:astra-examples:cpython-3.14
 5 version(s)
 ```
@@ -282,13 +288,13 @@ here that one:
 ```console
 $ astra history find --hash sha256:44c15377928affe5652ede77ce155a77160138143faba005313400d8497df07b
 fit#huber  .astra/records/huber/fit.json
-  f03a04503999803cb19bfec6350f2990271d03b8
+  0a13fa5d80bf8218b99605779569e703e07ff242
     bytes        sha256:44c15377928affe5652ede77ce155a77160138143faba005313400d8497df07b, 86 byte(s)
-    made at      8b637b90c974dcb5db9ff6d2e6d8a09d42471b4b
+    made at      32e0ccad54bd46baa069326f6695bc6a5883551f
     environment  urn:astra-examples:cpython-3.14
-  84b91dce5699cbf6251a2145fef2fac6ac8fc556
+  8ac9f1d2d98080c20b28933d9d8c5963550b5e4a
     bytes        sha256:44c15377928affe5652ede77ce155a77160138143faba005313400d8497df07b, 86 byte(s)
-    made at      3032833ac1f0a3c78a74633165901fd2d76f6814
+    made at      301cf1e714eac99c8edf4cd78b73f411056009f7
     environment  urn:astra-examples:cpython-3.14
 2 version(s)
 ```
@@ -304,19 +310,19 @@ the points were made from noisy-line's `config.json`:
 ```console
 $ astra history lineage comparison
 comparison  .astra/records/comparison.json
-  70524159bb294d6fdf3a64fcd419ca200da7d766
+  424c092500b46a00ce997c00104c080099ed6e08
     bytes        sha256:b1bd0abed9eecbbcbd8c249873ce28ab6b856376561b780d3c0674a4f0457cb8, 204 byte(s)
-    made at      3db2bfb4848fe1ed2428acd6b1f17cd97ea76d4c
+    made at      f42a01c5c78b9e66e607c7504d496f89a67a637a
     environment  urn:astra-examples:cpython-3.14
 made from
   fit#ols: sha256:6d8749c475f92a9acd5ee42be9112929f4a2a9149ff30a66c1654cbd66a19a98, 84 byte(s)
-    fit#ols's record of 70524159bb294d6fdf3a64fcd419ca200da7d766, made at 3db2bfb4848fe1ed2428acd6b1f17cd97ea76d4c
+    fit#ols's record of 424c092500b46a00ce997c00104c080099ed6e08, made at f42a01c5c78b9e66e607c7504d496f89a67a637a
     noisy.points: sha256:f207f31c1130d630505807629ce9ee21d491851372f4a22de2fe15f3c8d58c47, 1117 byte(s)
       points's record of 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206, made at 3732bd7f8be4fcc70b1582a104224d2a55d14cea
       config: sha256:75c96f73e6c6ec40e5d516d601ef759f54a27dd9819d14a7def9ebb2e853a58d, 101 byte(s)
         the file config.json
   fit#huber: sha256:fdbc97616ab1d246f9c6ef4137a0dbc345623ce4d9547e7e541342e9c7b40cf4, 86 byte(s)
-    fit#huber's record of 70524159bb294d6fdf3a64fcd419ca200da7d766, made at 3db2bfb4848fe1ed2428acd6b1f17cd97ea76d4c
+    fit#huber's record of 424c092500b46a00ce997c00104c080099ed6e08, made at f42a01c5c78b9e66e607c7504d496f89a67a637a
     noisy.points: sha256:f207f31c1130d630505807629ce9ee21d491851372f4a22de2fe15f3c8d58c47, 1117 byte(s)
       points's record of 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206, made at 3732bd7f8be4fcc70b1582a104224d2a55d14cea
       config: sha256:75c96f73e6c6ec40e5d516d601ef759f54a27dd9819d14a7def9ebb2e853a58d, 101 byte(s)
@@ -334,9 +340,9 @@ points  .astra/records/points.json
     made at      3732bd7f8be4fcc70b1582a104224d2a55d14cea
     environment  urn:astra-examples:cpython-3.14
 used by
-  fit#ols, its record of 70524159bb294d6fdf3a64fcd419ca200da7d766, through `noisy.points`: sha256:f207f31c1130d630505807629ce9ee21d491851372f4a22de2fe15f3c8d58c47, 1117 byte(s)
+  fit#ols, its record of 424c092500b46a00ce997c00104c080099ed6e08, through `noisy.points`: sha256:f207f31c1130d630505807629ce9ee21d491851372f4a22de2fe15f3c8d58c47, 1117 byte(s)
     points's record of 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206, made at 3732bd7f8be4fcc70b1582a104224d2a55d14cea
-  fit#huber, its record of 70524159bb294d6fdf3a64fcd419ca200da7d766, through `noisy.points`: sha256:f207f31c1130d630505807629ce9ee21d491851372f4a22de2fe15f3c8d58c47, 1117 byte(s)
+  fit#huber, its record of 424c092500b46a00ce997c00104c080099ed6e08, through `noisy.points`: sha256:f207f31c1130d630505807629ce9ee21d491851372f4a22de2fe15f3c8d58c47, 1117 byte(s)
     points's record of 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206, made at 3732bd7f8be4fcc70b1582a104224d2a55d14cea
 ```
 

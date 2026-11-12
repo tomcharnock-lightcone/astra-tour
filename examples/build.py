@@ -15,10 +15,12 @@ run.py, builds its results. Then the script makes a history of eight steps:
 8. line-fit declares noisy-line at that commit, is built again, and is committed.
 
 Every commit has the same author and a fixed date, and git's own configuration is left out, so
-building again gives the same commit ids, as long as build/ is in the same place and python3 has
-the same version: line-fit names noisy-line by a file:// URL, its absolute path, and each record
-names the Python the recipes ran with. The cache astra-tools keeps fetched commits and hashes in
-is build/cache. Run it with the Python that has astra-tools installed.
+building again gives the same commit ids, wherever build/ is, as long as python3 has the same
+version: each record names the Python the recipes ran with. line-fit names noisy-line by a URL
+that stands for its repository, https://astra-examples.invalid/noisy-line, and git reads that
+from build/noisy-line, through the setting `url.<build/>.insteadOf` that the script gives every
+git and run.py it starts. The cache astra-tools keeps fetched commits and hashes in is
+build/cache. Run it with the Python that has astra-tools installed.
 """
 
 from __future__ import annotations
@@ -34,6 +36,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 BUILD = HERE / "build"
 EXAMPLES = HERE / "examples"
+REMOTE = "https://astra-examples.invalid/"
+"""Where the examples' repositories stand: noisy-line is REMOTE + "noisy-line"."""
 START = datetime(2026, 11, 2, 9, 0, tzinfo=timezone.utc)
 
 
@@ -49,6 +53,10 @@ class Builder:
             "GIT_AUTHOR_EMAIL": "ada@example.org",
             "GIT_COMMITTER_NAME": "Ada Example",
             "GIT_COMMITTER_EMAIL": "ada@example.org",
+            # git reads REMOTE's repositories from build/ (git 2.31 or later)
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": f"url.file://{BUILD}/.insteadOf",
+            "GIT_CONFIG_VALUE_0": REMOTE,
         }
 
     def git(self, repo: Path, *args: str) -> str:
@@ -87,11 +95,9 @@ def edit(path: Path, pattern: str, replacement: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
-def declare(line_fit: Path, noisy_line: Path, commit: str) -> None:
-    """Point line-fit's declaration of noisy-line at `commit` of the repository `noisy_line`."""
-    yaml = line_fit / "astra.yaml"
-    edit(yaml, r"^    url: .*$", f"    url: {noisy_line.as_uri()}")
-    edit(yaml, r'^    commit: ".*"$', f'    commit: "{commit}"')
+def declare(line_fit: Path, commit: str) -> None:
+    """Point line-fit's declaration of noisy-line at `commit`."""
+    edit(line_fit / "astra.yaml", r'^    commit: ".*"$', f'    commit: "{commit}"')
 
 
 def main() -> None:
@@ -107,7 +113,7 @@ def main() -> None:
 
     print("2. line-fit declares noisy-line at that commit, and is built and committed")
     line = b.start("line-fit")
-    declare(line, noisy, first)
+    declare(line, first)
     b.commit(line, "Fit noisy-line's points by least squares and by the Huber loss")
     b.run(line)
     b.commit(line, "Build the fits and their comparison")
@@ -119,7 +125,7 @@ def main() -> None:
     second = b.commit(noisy, "Build the points again")
 
     print("4. line-fit declares noisy-line's new commit, and is built again")
-    declare(line, noisy, second)
+    declare(line, second)
     b.commit(line, "Read noisy-line's 60 points")
     b.run(line)
     b.commit(line, "Build the fits and their comparison again")
@@ -143,7 +149,7 @@ def main() -> None:
     third = b.commit(noisy, "Build the points with 6 outliers")
 
     print("8. line-fit declares noisy-line's newest commit, and is built again")
-    declare(line, noisy, third)
+    declare(line, third)
     b.commit(line, "Read noisy-line's points with 6 outliers")
     b.run(line)
     b.commit(line, "Build the fits and their comparison with 6 outliers")

@@ -1,6 +1,6 @@
 # 5. Other analyses, other commits, and history
 
-line-fit declares noisy-line by a `file://` URL and a commit. This chapter follows that declaration into astra-tools: the store it fetches into, the `git cat-file` reader it reads through, what lands in the cache, and how the three forms of declaration are read.
+line-fit declares noisy-line by a URL and a commit. This chapter follows that declaration into astra-tools: the store it fetches into, the `git cat-file` reader it reads through, what lands in the cache, and how the three forms of declaration are read.
 Then stand-ins, briefly, and `astra history`, which reads records back out of git.
 Step 6 (stand-ins) can be left for a second pass: nothing after it depends on it.
 
@@ -15,34 +15,34 @@ $ sh setup/05.sh
   noisy-line c94c7b063ef9 Generate noisy points around a line
   noisy-line 2c5197a98df7 Build the points
 2. line-fit declares noisy-line at that commit, and is built and committed
-  line-fit 61da112d31fa Fit noisy-line's points by least squares and by the Huber loss
-  line-fit aca519ee76e7 Build the fits and their comparison
+  line-fit 2fc9ea1f101a Fit noisy-line's points by least squares and by the Huber loss
+  line-fit 33c33b131e54 Build the fits and their comparison
 3. noisy-line draws twice as many points, and is built again
   noisy-line 228881854072 Draw 60 points
   noisy-line 18cfe9d5695d Build the points again
 4. line-fit declares noisy-line's new commit, and is built again
-  line-fit 398cd34fffab Read noisy-line's 60 points
-  line-fit 5e496bf35e59 Build the fits and their comparison again
+  line-fit 301cf1e714ea Read noisy-line's 60 points
+  line-fit 8ac9f1d2d980 Build the fits and their comparison again
 5. the Huber option's setting changes, and what it changes is built again
-  line-fit b4e668612ca3 Huber: turn linear from 1.0 robust standard deviations
-  line-fit 48b131e715b8 Build the Huber fit and the comparison again
+  line-fit 6d332f6b56ac Huber: turn linear from 1.0 robust standard deviations
+  line-fit 0b908983c093 Build the Huber fit and the comparison again
 6. the Huber option's setting changes back, and what it changes is built again
-  line-fit b0e7c5691722 Huber: back to 1.345 robust standard deviations, the usual choice
-  line-fit 1e6c554d18d7 Build the Huber fit and the comparison at 1.345
+  line-fit 32e0ccad54bd Huber: back to 1.345 robust standard deviations, the usual choice
+  line-fit 0a13fa5d80bf Build the Huber fit and the comparison at 1.345
 7. noisy-line pushes twice as many points above the line, and is built again
   noisy-line 3732bd7f8be4 Push 6 points above the line, not 3
   noisy-line 2dcf20f515e3 Build the points with 6 outliers
 8. line-fit declares noisy-line's newest commit, and is built again
-  line-fit 5b049987ddc8 Read noisy-line's points with 6 outliers
-  line-fit 47395b7e07cf Build the fits and their comparison with 6 outliers
+  line-fit f42a01c5c78b Read noisy-line's points with 6 outliers
+  line-fit 424c092500b4 Build the fits and their comparison with 6 outliers
 $ cd work/05/build/line-fit
 $ export ASTRA_CACHE_DIR=$TOUR/work/05/cache
 ```
 
 - `setup/05.sh` copies `examples/` into `work/05/` and runs `build.py` there (about five seconds).
-- noisy-line's ids are the examples README's. line-fit's differ: its declaration holds the absolute `file://` URL of `work/05/build/noisy-line`, and the URL is part of the committed `astra.yaml`. So line-fit's ids, and the store's name in step 2, are the chapter's only with the tour in its own folder (`…/tour` stands for it; the README's *Paths*).
+- noisy-line's and line-fit's ids are the examples README's. line-fit's declaration names noisy-line by the URL `https://astra-examples.invalid/noisy-line`, which stands for noisy-line's repository and which no network serves: `env.sh` has git read it from `work/build/noisy-line`, and the setup makes `work/build` a link to `work/05/build` (the README's *URLs*). So the ids, and the store's name in step 2, hold wherever the tour is.
 - The ids hold only where `python3 --version` prints 3.14 (any patch release) after `source env.sh`: run.py's records name the `python3` on PATH by its version (`examples/run.py:149-158`). With another version the setup ends with a line saying so, and every id from `Build the points` on differs, the commit line-fit declares among them, so nearly every block below differs too, as do the `environment` lines. The README's *Before you start* says how to get 3.14.
-- The chapter keeps a cache of its own, `work/05/cache`, so that it starts empty: it doesn't exist until step 2 makes it. The build doesn't use it: `build.py` gives its git and `run.py` processes a cache of their own, `work/05/build/cache` (`examples/build.py:45`). The next `source env.sh` puts `ASTRA_CACHE_DIR` back to `work/cache`.
+- The chapter keeps a cache of its own, `work/05/cache`, so that it starts empty: it doesn't exist until step 2 makes it. The build doesn't use it: `build.py` gives its git and `run.py` processes a cache of their own, `work/05/build/cache` (`examples/build.py:49`). The next `source env.sh` puts `ASTRA_CACHE_DIR` back to `work/cache`.
 
 ## 1. Two repositories, one declaration
 
@@ -50,16 +50,16 @@ line-fit's only link to noisy-line is four lines of its `astra.yaml`. Look at bo
 
 ```console
 $ git --no-pager log --oneline --no-decorate
-47395b7 Build the fits and their comparison with 6 outliers
-5b04998 Read noisy-line's points with 6 outliers
-1e6c554 Build the Huber fit and the comparison at 1.345
-b0e7c56 Huber: back to 1.345 robust standard deviations, the usual choice
-48b131e Build the Huber fit and the comparison again
-b4e6686 Huber: turn linear from 1.0 robust standard deviations
-5e496bf Build the fits and their comparison again
-398cd34 Read noisy-line's 60 points
-aca519e Build the fits and their comparison
-61da112 Fit noisy-line's points by least squares and by the Huber loss
+424c092 Build the fits and their comparison with 6 outliers
+f42a01c Read noisy-line's points with 6 outliers
+0a13fa5 Build the Huber fit and the comparison at 1.345
+32e0cca Huber: back to 1.345 robust standard deviations, the usual choice
+0b90898 Build the Huber fit and the comparison again
+6d332f6 Huber: turn linear from 1.0 robust standard deviations
+8ac9f1d Build the fits and their comparison again
+301cf1e Read noisy-line's 60 points
+33c33b1 Build the fits and their comparison
+2fc9ea1 Fit noisy-line's points by least squares and by the Huber loss
 $ git -C ../noisy-line --no-pager log --oneline --no-decorate
 2dcf20f Build the points with 6 outliers
 3732bd7 Push 6 points above the line, not 3
@@ -70,7 +70,7 @@ c94c7b0 Generate noisy points around a line
 $ sed -n '3,6p' astra.yaml
 analyses:
   noisy:
-    url: file://…/tour/work/05/build/noisy-line
+    url: https://astra-examples.invalid/noisy-line
     commit: "2dcf20f515e3eecf7e2126c182c54dd5f0f8f206"
 $ astra cache path
 …/tour/work/05/cache
@@ -79,9 +79,9 @@ no cache yet
 ```
 
 What to notice:
-- `HEAD~n` later counts back through this log: `HEAD~1` is 5b04998 (step 8's new declaration, nothing built), `HEAD~4` is 48b131e (step 5's build), `HEAD~8` is aca519e (step 2's build), `HEAD~9` the first commit.
+- `HEAD~n` later counts back through this log: `HEAD~1` is f42a01c (step 8's new declaration, nothing built), `HEAD~4` is 0b90898 (step 5's build), `HEAD~8` is 33c33b1 (step 2's build), `HEAD~9` the first commit.
 - The declared commit is noisy-line's HEAD, step 7's build: a commit that holds the records, later than the one their recipe ran from ([Results](https://astra-spec.org/0.1/specification/#results), in the paragraph on *present*).
-- A `file://` URL is a `url` that names another repository on the same machine ([Elements](https://astra-spec.org/0.1/specification/#elements) *declare*).
+- A `url` names another repository, wherever it is ([Elements](https://astra-spec.org/0.1/specification/#elements) *declare*); git, here, reads this one from the copy in `work/05/build`, over `file://`.
 - `astra cache path` prints where the cache would be. Nothing has made it yet.
 
 Under the hood:
@@ -99,14 +99,14 @@ $ ls -1 "$ASTRA_CACHE_DIR"
 remotes
 validity
 $ ls "$ASTRA_CACHE_DIR/remotes"
-59e1d0836369cdb8035c557152283ff6f23a1eb38face13c06987dfcaaea4c71
+45b4b2d609f6786e268149a91cdd8d8b002d17315dcce3d9d780d1252bac6029
 $ ls "$ASTRA_CACHE_DIR/validity" | wc -l
 1
-$ printf %s "$(sed -n 's/^    url: //p' astra.yaml)" | sha256sum
-59e1d0836369cdb8035c557152283ff6f23a1eb38face13c06987dfcaaea4c71  -
-$ export STORE=$ASTRA_CACHE_DIR/remotes/59e1d0836369cdb8035c557152283ff6f23a1eb38face13c06987dfcaaea4c71
+$ printf %s "$(sed -n 's/^    url: //p' astra.yaml)" | shasum -a 256
+45b4b2d609f6786e268149a91cdd8d8b002d17315dcce3d9d780d1252bac6029  -
+$ export STORE=$ASTRA_CACHE_DIR/remotes/45b4b2d609f6786e268149a91cdd8d8b002d17315dcce3d9d780d1252bac6029
 $ git -C "$STORE" config --get remote.origin.url
-file://…/tour/work/05/build/noisy-line
+https://astra-examples.invalid/noisy-line
 $ git -C "$STORE" for-each-ref
 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206 commit	refs/astra/2dcf20f515e3eecf7e2126c182c54dd5f0f8f206
 $ git -C "$STORE" cat-file --batch-all-objects --batch-check='%(objecttype)' 2>/dev/null | sort | uniq -c
@@ -119,7 +119,7 @@ $ cat "$ASTRA_CACHE_DIR"/validity/*; echo
 
 What to notice:
 - The store is as chapter 1's step 8 opened one: one per URL, named by the SHA-256 of the URL as written, its `origin` that URL, and one ref per commit asked for, `refs/astra/<commit>`. What is new: it holds 6 commits, since the fetch brings 2dcf20f with all its ancestors (no `--depth`).
-- It holds 11 blobs too, every blob of noisy-line's history, though astra-tools fetches with `--filter=blob:none`: a `file://` remote ignores the filter unless it sets `uploadpack.allowFilter`, and astra-tools drops git's warning (chapter 1, step 8). `2>/dev/null` hides git's other warning, that the store is a partial clone. Step 3 shows the difference.
+- It holds 11 blobs too, every blob of noisy-line's history, though astra-tools fetches with `--filter=blob:none`: a remote read over `file://`, as this copy is, ignores the filter unless it sets `uploadpack.allowFilter`, and astra-tools drops git's warning (chapter 1, step 8). `2>/dev/null` hides git's other warning, that the store is a partial clone. Step 3 shows the difference.
 - `validity` holds one verdict, `[]`: noisy-line at 2dcf20f, judged as its own root, breaks no `MUST`. Its file name hashes astra-tools' version too, so it differs between builds of astra-tools (which is why it isn't shown).
 
 Under the hood:
@@ -187,13 +187,13 @@ The stack now spans two repositories. `info` shows how each analysis is known, a
 ```console
 $ astra info
 astra.yaml
-  analyses  noisy: astra.yaml at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206 from file://…/tour/work/05/build/noisy-line
+  analyses  noisy: astra.yaml at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206 from https://astra-examples.invalid/noisy-line
   outputs   fit: table, json
             comparison: table, json
   decisions method: ols, huber
   universes ols
             huber
-astra.yaml at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206 from file://…/tour/work/05/build/noisy-line
+astra.yaml at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206 from https://astra-examples.invalid/noisy-line
   inputs    config: config.json
   outputs   points: data, csv
 $ astra plan
@@ -217,7 +217,7 @@ comparison
   run in    .
   command   python3 src/compare.py results/ols/fit.json results/huber/fit.json results/comparison.json
 4 planned result(s)
-$ astra plan --json | nix shell 'nixpkgs#jq' --command jq -c '.results[] | {address: [.places[].address], owner, read_only, inputs: [.inputs[] | {entry, path, commit, result}]}'
+$ astra plan --json | jq -c '.results[] | {address: [.places[].address], owner, read_only, inputs: [.inputs[] | {entry, path, commit, result}]}'
 {"address":["points"],"owner":{"folder":"","commit":"2dcf20f515e3eecf7e2126c182c54dd5f0f8f206"},"read_only":true,"inputs":[{"entry":"config","path":"config.json","commit":"2dcf20f515e3eecf7e2126c182c54dd5f0f8f206","result":null}]}
 {"address":["fit#ols"],"owner":{"folder":"","commit":null},"read_only":false,"inputs":[{"entry":"noisy.points","path":"results/points.csv","commit":"2dcf20f515e3eecf7e2126c182c54dd5f0f8f206","result":0}]}
 {"address":["fit#huber"],"owner":{"folder":"","commit":null},"read_only":false,"inputs":[{"entry":"noisy.points","path":"results/points.csv","commit":"2dcf20f515e3eecf7e2126c182c54dd5f0f8f206","result":0}]}
@@ -247,38 +247,38 @@ Under the hood:
 A declaration names an analysis by `path`, by `path` and `commit`, or by `url` and `commit` ([Elements](https://astra-spec.org/0.1/specification/#elements) *declare*). Add the two forms line-fit lacks, by `path` and by `path` and `commit`, both naming line-fit's own folder (as the specification's `previous` does), and see how each is read.
 
 ```console
-$ sed -i "/^analyses:/a\\  before: {path: ., commit: \"$(git rev-parse 'HEAD~8')\"}" astra.yaml
-$ sed -i '/^analyses:/a\  here: {path: .}' astra.yaml
+$ perl -pi -e "s/^analyses:\n/analyses:\n  before: {path: ., commit: \"$(git rev-parse 'HEAD~8')\"}\n/" astra.yaml
+$ perl -pi -e 's/^analyses:\n/analyses:\n  here: {path: .}\n/' astra.yaml
 $ sed -n '3,8p' astra.yaml
 analyses:
   here: {path: .}
-  before: {path: ., commit: "aca519ee76e71f7392dbd216d2e1bc71d7d5adfd"}
+  before: {path: ., commit: "33c33b131e54919cc3bcf7a3025a0d138df801a2"}
   noisy:
-    url: file://…/tour/work/05/build/noisy-line
+    url: https://astra-examples.invalid/noisy-line
     commit: "2dcf20f515e3eecf7e2126c182c54dd5f0f8f206"
 $ astra validate
 astra.yaml: valid, 0 error(s), 0 warning(s)
 $ astra info
 astra.yaml
   analyses  here: astra.yaml
-            before: astra.yaml at aca519ee76e71f7392dbd216d2e1bc71d7d5adfd
-            noisy: astra.yaml at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206 from file://…/tour/work/05/build/noisy-line
+            before: astra.yaml at 33c33b131e54919cc3bcf7a3025a0d138df801a2
+            noisy: astra.yaml at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206 from https://astra-examples.invalid/noisy-line
   outputs   fit: table, json
             comparison: table, json
   decisions method: ols, huber
   universes ols
             huber
-astra.yaml at aca519ee76e71f7392dbd216d2e1bc71d7d5adfd
-  analyses  noisy: astra.yaml at 2c5197a98df7d378a402a48ac036add64662960b from file://…/tour/work/05/build/noisy-line
+astra.yaml at 33c33b131e54919cc3bcf7a3025a0d138df801a2
+  analyses  noisy: astra.yaml at 2c5197a98df7d378a402a48ac036add64662960b from https://astra-examples.invalid/noisy-line
   outputs   fit: table, json
             comparison: table, json
   decisions method: ols, huber
   universes ols
             huber
-astra.yaml at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206 from file://…/tour/work/05/build/noisy-line
+astra.yaml at 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206 from https://astra-examples.invalid/noisy-line
   inputs    config: config.json
   outputs   points: data, csv
-astra.yaml at 2c5197a98df7d378a402a48ac036add64662960b from file://…/tour/work/05/build/noisy-line
+astra.yaml at 2c5197a98df7d378a402a48ac036add64662960b from https://astra-examples.invalid/noisy-line
   inputs    config: config.json
   outputs   points: data, csv
 $ git -C "$STORE" for-each-ref
@@ -296,10 +296,10 @@ $ git checkout -q astra.yaml
 
 What to notice:
 - `here` reaches `astra.yaml`, the root itself: same folder, also in the working tree, so the same identity, and it isn't read again. An address through it is another spelling of a root element ([Elements](https://astra-spec.org/0.1/specification/#elements) *identity*).
-- `before` is read at aca519e in line-fit's own repository, so no "from". It declares noisy-line at 2c5197a, step 1's build, and `info` lists that as a fourth analysis: same folder, another commit, another analysis.
+- `before` is read at 33c33b1 in line-fit's own repository, so no "from". It declares noisy-line at 2c5197a, step 1's build, and `info` lists that as a fourth analysis: same folder, another commit, another analysis.
 - The store still has one ref. 2c5197a is an ancestor of 2dcf20f, fetched with it in step 3, so it counts as got and nothing is fetched.
 - `validity` has three verdicts now, one for each analysis from a commit. `hashes` has three entries: line-fit's three result files, hashed by step 3's `check`. Had that `check` run within two seconds of the setup's last build, `hashes` would be missing here (`hashing.py:60`); run by hand, it never is.
-- The analysis stays valid, and its plan is the same: nothing reads `here` or `before`. `COMMIT_NOT_ANCESTOR`, astra-tools' own warning, holds, since aca519e is an ancestor of HEAD.
+- The analysis stays valid, and its plan is the same: nothing reads `here` or `before`. `COMMIT_NOT_ANCESTOR`, astra-tools' own warning, holds, since 33c33b1 is an ancestor of HEAD.
 
 Under the hood:
 - `_follow` (`stack.py:311`), by `path` alone: the declaring analysis's own reader, here the `WorktreeReader` (`stack.py:346-348`). `bind` reads a place only if its identity isn't a member yet (`stack.py:280`).
@@ -320,7 +320,7 @@ $ python -c 'from astra.sources.standins import registered; [print(s.name, "->",
 Git LFS -> config.json
 git-annex -> config.json
 DVC -> config.json.dvc
-$ printf 'version https://git-lfs.github.com/spec/v1\noid sha256:%s\nsize %s\n' $(sha256sum config.json | cut -c1-64) $(wc -c < config.json) > pointer
+$ printf 'version https://git-lfs.github.com/spec/v1\noid sha256:%s\nsize %s\n' $(shasum -a 256 config.json | cut -c1-64) $(wc -c < config.json) > pointer
 $ mv pointer config.json
 $ cat config.json
 version https://git-lfs.github.com/spec/v1
@@ -331,7 +331,7 @@ astra.yaml: valid, 0 error(s), 0 warning(s)
 $ astra check
 .astra/records/points.json  points  unchanged  present
 astra.yaml: 1 place(s) of planned results, 1 unchanged, 0 stale, 0 missing; 0 absent
-$ sed -i 's/^size 101$/size 102/' config.json
+$ perl -pi -e 's/^size 101$/size 102/' config.json
 $ astra check
 .astra/records/points.json  points  stale  present
   error STALE_RESULT the content of `config`, config.json, isn't what the recipe read
@@ -368,33 +368,33 @@ Under the hood:
 ```console
 $ astra history timeline 'fit#huber'
 fit#huber  .astra/records/huber/fit.json
-  47395b7e07cfc906fc5615d3efb5c65938f8e01a
+  424c092500b46a00ce997c00104c080099ed6e08
     bytes        sha256:fdbc97616ab1d246f9c6ef4137a0dbc345623ce4d9547e7e541342e9c7b40cf4, 86 byte(s)
-    made at      5b049987ddc8717cc33fb4bd967209e517ba0433
+    made at      f42a01c5c78b9e66e607c7504d496f89a67a637a
     environment  urn:astra-examples:cpython-3.14
-  1e6c554d18d73e7d2d29be5140680d2a955dcd09
+  0a13fa5d80bf8218b99605779569e703e07ff242
     bytes        sha256:44c15377928affe5652ede77ce155a77160138143faba005313400d8497df07b, 86 byte(s)
-    made at      b0e7c5691722b0f8c286513d34e6c954be5c605f
+    made at      32e0ccad54bd46baa069326f6695bc6a5883551f
     environment  urn:astra-examples:cpython-3.14
-  48b131e715b8be775ceb21754c35d1a4b1e9c00e
+  0b908983c093e4c219c48ccc12393277fc6e1f30
     bytes        sha256:72c18945d6a304e5887bca9bd3fa5628a8fa2dc33900083538d1fa1277aa7aa3, 86 byte(s)
-    made at      b4e668612ca3634daf76529928888e4ac4f225ba
+    made at      6d332f6b56acd7a78ad0b8bbfae8872bc76426f5
     environment  urn:astra-examples:cpython-3.14
-  5e496bf35e59765099614870b0a274f1368d3e28
+  8ac9f1d2d98080c20b28933d9d8c5963550b5e4a
     bytes        sha256:44c15377928affe5652ede77ce155a77160138143faba005313400d8497df07b, 86 byte(s)
-    made at      398cd34fffabc1980aa9c770d0ac07deb95355d4
+    made at      301cf1e714eac99c8edf4cd78b73f411056009f7
     environment  urn:astra-examples:cpython-3.14
-  aca519ee76e71f7392dbd216d2e1bc71d7d5adfd
+  33c33b131e54919cc3bcf7a3025a0d138df801a2
     bytes        sha256:6e373f83ec8711725574156cd02b6571e249e9b5c971fbb793d9055ea3396132, 86 byte(s)
-    made at      61da112d31fa11d8b477ba3bbfcb19c318578468
+    made at      2fc9ea1f101a851502f3bacfb2dc8d4a6cccbe49
     environment  urn:astra-examples:cpython-3.14
 5 version(s)
 $ git --no-pager log --format='%H %s' -- .astra/records/huber/fit.json
-47395b7e07cfc906fc5615d3efb5c65938f8e01a Build the fits and their comparison with 6 outliers
-1e6c554d18d73e7d2d29be5140680d2a955dcd09 Build the Huber fit and the comparison at 1.345
-48b131e715b8be775ceb21754c35d1a4b1e9c00e Build the Huber fit and the comparison again
-5e496bf35e59765099614870b0a274f1368d3e28 Build the fits and their comparison again
-aca519ee76e71f7392dbd216d2e1bc71d7d5adfd Build the fits and their comparison
+424c092500b46a00ce997c00104c080099ed6e08 Build the fits and their comparison with 6 outliers
+0a13fa5d80bf8218b99605779569e703e07ff242 Build the Huber fit and the comparison at 1.345
+0b908983c093e4c219c48ccc12393277fc6e1f30 Build the Huber fit and the comparison again
+8ac9f1d2d98080c20b28933d9d8c5963550b5e4a Build the fits and their comparison again
+33c33b131e54919cc3bcf7a3025a0d138df801a2 Build the fits and their comparison
 $ astra history timeline points
 points  .astra/records/points.json
   2dcf20f515e3eecf7e2126c182c54dd5f0f8f206
@@ -421,7 +421,7 @@ points  .astra/records/points.json
 
 What to notice:
 - The five versions are exactly what `git log -- <record>` lists. A version's commit is the one that changed the record's file; "made at" is the commit the record names, where the recipe ran: here always the one before.
-- 5e496bf (step 4) and 1e6c554 (step 6) give one hash: `HUBER_K` went to 1.0 and back.
+- 8ac9f1d (step 4) and 0a13fa5 (step 6) give one hash: `HUBER_K` went to 1.0 and back.
 - From line-fit, `points` has one version, its record at the declared commit, 2dcf20f, made at 3732bd7. From noisy-line, where `points` is the root's own result, it has three.
 - `PATH` comes after `ADDR`. The address is resolved against today's plan, from the working tree's `astra.yaml`; the versions come only from commits, never from the working tree.
 
@@ -438,19 +438,19 @@ Under the hood:
 ```console
 $ astra history lineage comparison
 comparison  .astra/records/comparison.json
-  47395b7e07cfc906fc5615d3efb5c65938f8e01a
+  424c092500b46a00ce997c00104c080099ed6e08
     bytes        sha256:b1bd0abed9eecbbcbd8c249873ce28ab6b856376561b780d3c0674a4f0457cb8, 204 byte(s)
-    made at      5b049987ddc8717cc33fb4bd967209e517ba0433
+    made at      f42a01c5c78b9e66e607c7504d496f89a67a637a
     environment  urn:astra-examples:cpython-3.14
 made from
   fit#ols: sha256:6d8749c475f92a9acd5ee42be9112929f4a2a9149ff30a66c1654cbd66a19a98, 84 byte(s)
-    fit#ols's record of 47395b7e07cfc906fc5615d3efb5c65938f8e01a, made at 5b049987ddc8717cc33fb4bd967209e517ba0433
+    fit#ols's record of 424c092500b46a00ce997c00104c080099ed6e08, made at f42a01c5c78b9e66e607c7504d496f89a67a637a
     noisy.points: sha256:f207f31c1130d630505807629ce9ee21d491851372f4a22de2fe15f3c8d58c47, 1117 byte(s)
       points's record of 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206, made at 3732bd7f8be4fcc70b1582a104224d2a55d14cea
       config: sha256:75c96f73e6c6ec40e5d516d601ef759f54a27dd9819d14a7def9ebb2e853a58d, 101 byte(s)
         the file config.json
   fit#huber: sha256:fdbc97616ab1d246f9c6ef4137a0dbc345623ce4d9547e7e541342e9c7b40cf4, 86 byte(s)
-    fit#huber's record of 47395b7e07cfc906fc5615d3efb5c65938f8e01a, made at 5b049987ddc8717cc33fb4bd967209e517ba0433
+    fit#huber's record of 424c092500b46a00ce997c00104c080099ed6e08, made at f42a01c5c78b9e66e607c7504d496f89a67a637a
     noisy.points: sha256:f207f31c1130d630505807629ce9ee21d491851372f4a22de2fe15f3c8d58c47, 1117 byte(s)
       points's record of 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206, made at 3732bd7f8be4fcc70b1582a104224d2a55d14cea
       config: sha256:75c96f73e6c6ec40e5d516d601ef759f54a27dd9819d14a7def9ebb2e853a58d, 101 byte(s)
@@ -462,9 +462,9 @@ points  .astra/records/points.json
     made at      3732bd7f8be4fcc70b1582a104224d2a55d14cea
     environment  urn:astra-examples:cpython-3.14
 used by
-  fit#ols, its record of 47395b7e07cfc906fc5615d3efb5c65938f8e01a, through `noisy.points`: sha256:f207f31c1130d630505807629ce9ee21d491851372f4a22de2fe15f3c8d58c47, 1117 byte(s)
+  fit#ols, its record of 424c092500b46a00ce997c00104c080099ed6e08, through `noisy.points`: sha256:f207f31c1130d630505807629ce9ee21d491851372f4a22de2fe15f3c8d58c47, 1117 byte(s)
     points's record of 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206, made at 3732bd7f8be4fcc70b1582a104224d2a55d14cea
-  fit#huber, its record of 47395b7e07cfc906fc5615d3efb5c65938f8e01a, through `noisy.points`: sha256:f207f31c1130d630505807629ce9ee21d491851372f4a22de2fe15f3c8d58c47, 1117 byte(s)
+  fit#huber, its record of 424c092500b46a00ce997c00104c080099ed6e08, through `noisy.points`: sha256:f207f31c1130d630505807629ce9ee21d491851372f4a22de2fe15f3c8d58c47, 1117 byte(s)
     points's record of 2dcf20f515e3eecf7e2126c182c54dd5f0f8f206, made at 3732bd7f8be4fcc70b1582a104224d2a55d14cea
 ```
 
@@ -485,13 +485,13 @@ Under the hood:
 ```console
 $ astra history find --hash sha256:44c15377928affe5652ede77ce155a77160138143faba005313400d8497df07b
 fit#huber  .astra/records/huber/fit.json
-  1e6c554d18d73e7d2d29be5140680d2a955dcd09
+  0a13fa5d80bf8218b99605779569e703e07ff242
     bytes        sha256:44c15377928affe5652ede77ce155a77160138143faba005313400d8497df07b, 86 byte(s)
-    made at      b0e7c5691722b0f8c286513d34e6c954be5c605f
+    made at      32e0ccad54bd46baa069326f6695bc6a5883551f
     environment  urn:astra-examples:cpython-3.14
-  5e496bf35e59765099614870b0a274f1368d3e28
+  8ac9f1d2d98080c20b28933d9d8c5963550b5e4a
     bytes        sha256:44c15377928affe5652ede77ce155a77160138143faba005313400d8497df07b, 86 byte(s)
-    made at      398cd34fffabc1980aa9c770d0ac07deb95355d4
+    made at      301cf1e714eac99c8edf4cd78b73f411056009f7
     environment  urn:astra-examples:cpython-3.14
 2 version(s)
 $ astra history get 'fit#huber@HEAD~4'
@@ -509,7 +509,7 @@ $ astra history get 'fit#huber@HEAD'
   "intercept": 1.136179
 }
 $ astra history get 'comparison@HEAD~9'; echo "exit $?"
-astra: 61da112d31fa11d8b477ba3bbfcb19c318578468 holds no record at .astra/records/comparison.json
+astra: 2fc9ea1f101a851502f3bacfb2dc8d4a6cccbe49 holds no record at .astra/records/comparison.json
 exit 1
 ```
 
@@ -531,15 +531,15 @@ Each exercise starts where the chapter ends, in line-fit, and puts back what it 
 1. Move line-fit's declaration to step 3's build of noisy-line, 18cfe9d, without committing. Predict `astra validate`, `astra check` (which results are stale, and why), and `astra history lineage 'fit#ols'`. Then move it to 2288818, step 3's commit before its build, and predict `astra check` again.
 
     ```
-    sed -i 's/2dcf20f515e3eecf7e2126c182c54dd5f0f8f206/18cfe9d5695d7fc13a3d93bbbba2f6a644bd284d/' astra.yaml
-    sed -i 's/18cfe9d5695d7fc13a3d93bbbba2f6a644bd284d/2288818540727575fa0a5953bfebea956a07b787/' astra.yaml
+    perl -pi -e 's/2dcf20f515e3eecf7e2126c182c54dd5f0f8f206/18cfe9d5695d7fc13a3d93bbbba2f6a644bd284d/' astra.yaml
+    perl -pi -e 's/18cfe9d5695d7fc13a3d93bbbba2f6a644bd284d/2288818540727575fa0a5953bfebea956a07b787/' astra.yaml
     git checkout -q astra.yaml
     ```
 
 <details><summary>Answer</summary>
 
 ```console
-$ sed -i 's/2dcf20f515e3eecf7e2126c182c54dd5f0f8f206/18cfe9d5695d7fc13a3d93bbbba2f6a644bd284d/' astra.yaml
+$ perl -pi -e 's/2dcf20f515e3eecf7e2126c182c54dd5f0f8f206/18cfe9d5695d7fc13a3d93bbbba2f6a644bd284d/' astra.yaml
 $ astra validate
 astra.yaml: valid, 0 error(s), 0 warning(s)
 $ astra check
@@ -556,14 +556,14 @@ astra.yaml
 astra.yaml: 4 place(s) of planned results, 1 unchanged, 3 stale, 0 missing; 0 absent
 $ astra history lineage 'fit#ols'
 fit#ols  .astra/records/ols/fit.json
-  47395b7e07cfc906fc5615d3efb5c65938f8e01a
+  424c092500b46a00ce997c00104c080099ed6e08
     bytes        sha256:6d8749c475f92a9acd5ee42be9112929f4a2a9149ff30a66c1654cbd66a19a98, 84 byte(s)
-    made at      5b049987ddc8717cc33fb4bd967209e517ba0433
+    made at      f42a01c5c78b9e66e607c7504d496f89a67a637a
     environment  urn:astra-examples:cpython-3.14
 made from
   noisy.points: sha256:f207f31c1130d630505807629ce9ee21d491851372f4a22de2fe15f3c8d58c47, 1117 byte(s)
     no version of points's record gives them
-$ sed -i 's/18cfe9d5695d7fc13a3d93bbbba2f6a644bd284d/2288818540727575fa0a5953bfebea956a07b787/' astra.yaml
+$ perl -pi -e 's/18cfe9d5695d7fc13a3d93bbbba2f6a644bd284d/2288818540727575fa0a5953bfebea956a07b787/' astra.yaml
 $ astra check
 .astra/records/points.json at 2288818540727575fa0a5953bfebea956a07b787  points  stale  present
   error STALE_RESULT the content of `config`, config.json, isn't what the recipe read
@@ -593,34 +593,34 @@ $ git checkout -q astra.yaml
 
 ```console
 $ astra history timeline comparison | grep -B1 bytes
-  47395b7e07cfc906fc5615d3efb5c65938f8e01a
+  424c092500b46a00ce997c00104c080099ed6e08
     bytes        sha256:b1bd0abed9eecbbcbd8c249873ce28ab6b856376561b780d3c0674a4f0457cb8, 204 byte(s)
 --
-  1e6c554d18d73e7d2d29be5140680d2a955dcd09
+  0a13fa5d80bf8218b99605779569e703e07ff242
     bytes        sha256:444faf4dbe91be66de33a0c9c9e0889f2c3a06287e26ee685b8cc0c6453a284e, 204 byte(s)
 --
-  48b131e715b8be775ceb21754c35d1a4b1e9c00e
+  0b908983c093e4c219c48ccc12393277fc6e1f30
     bytes        sha256:8bcd008e9c04824cdf116a2d44d1f1f3028b449665f279e06cfa0fe57bb48ae2, 203 byte(s)
 --
-  5e496bf35e59765099614870b0a274f1368d3e28
+  8ac9f1d2d98080c20b28933d9d8c5963550b5e4a
     bytes        sha256:444faf4dbe91be66de33a0c9c9e0889f2c3a06287e26ee685b8cc0c6453a284e, 204 byte(s)
 --
-  aca519ee76e71f7392dbd216d2e1bc71d7d5adfd
+  33c33b131e54919cc3bcf7a3025a0d138df801a2
     bytes        sha256:7bd1a00ea538783eadf53c5b1a69d35029413940b4725b1eeddb928d90dcb4dc, 204 byte(s)
 $ astra history find --hash sha256:444faf4dbe91be66de33a0c9c9e0889f2c3a06287e26ee685b8cc0c6453a284e
 comparison  .astra/records/comparison.json
-  1e6c554d18d73e7d2d29be5140680d2a955dcd09
+  0a13fa5d80bf8218b99605779569e703e07ff242
     bytes        sha256:444faf4dbe91be66de33a0c9c9e0889f2c3a06287e26ee685b8cc0c6453a284e, 204 byte(s)
-    made at      b0e7c5691722b0f8c286513d34e6c954be5c605f
+    made at      32e0ccad54bd46baa069326f6695bc6a5883551f
     environment  urn:astra-examples:cpython-3.14
-  5e496bf35e59765099614870b0a274f1368d3e28
+  8ac9f1d2d98080c20b28933d9d8c5963550b5e4a
     bytes        sha256:444faf4dbe91be66de33a0c9c9e0889f2c3a06287e26ee685b8cc0c6453a284e, 204 byte(s)
-    made at      398cd34fffabc1980aa9c770d0ac07deb95355d4
+    made at      301cf1e714eac99c8edf4cd78b73f411056009f7
     environment  urn:astra-examples:cpython-3.14
 2 version(s)
 ```
 
-- The comparison, at steps 4 (5e496bf) and 6 (1e6c554). It reads both fits, and step 6 gives both the bytes of step 4: `fit#ols` wasn't rebuilt, and `fit#huber` came back to the same bytes.
+- The comparison, at steps 4 (8ac9f1d) and 6 (0a13fa5). It reads both fits, and step 6 gives both the bytes of step 4: `fit#ols` wasn't rebuilt, and `fit#huber` came back to the same bytes.
 - `fit#ols` has none: it was built only at steps 2, 4 and 8 (steps 5 and 6 used `--rebuild fit#huber`), each time from other points.
 - Step 5's comparison is one byte shorter, 203: its `slope_difference` is 0.07068, a digit fewer (`astra history get 'comparison@HEAD~4'` shows it).
 
@@ -635,13 +635,13 @@ $ astra history get 'points@HEAD'; echo "exit $?"
 Usage: astra history get [OPTIONS] ADDR@REV [PATH]
 Try 'astra history get --help' for help.
 
-Error: Invalid value for ADDR@REV: `HEAD` names no commit of …/tour/work/05/cache/remotes/59e1d0836369cdb8035c557152283ff6f23a1eb38face13c06987dfcaaea4c71
+Error: Invalid value for ADDR@REV: `HEAD` names no commit of …/tour/work/05/cache/remotes/45b4b2d609f6786e268149a91cdd8d8b002d17315dcce3d9d780d1252bac6029
 exit 2
 $ astra history get 'points@18cfe9d' | wc -l
 61
-$ astra history get 'points@18cfe9d' | sha256sum
+$ astra history get 'points@18cfe9d' | shasum -a 256
 11d14fd855f6a3eae39dcd3ffaa849d0d8f2562ea907b31eb140369af0c4d6d9  -
-$ astra history get 'points@HEAD~2' ../noisy-line | sha256sum
+$ astra history get 'points@HEAD~2' ../noisy-line | shasum -a 256
 11d14fd855f6a3eae39dcd3ffaa849d0d8f2562ea907b31eb140369af0c4d6d9  -
 ```
 
@@ -656,7 +656,7 @@ $ astra history get 'points@HEAD~2' ../noisy-line | sha256sum
 <details><summary>Answer</summary>
 
 ```console
-$ sed -i '/^analyses:/a\  before: {path: ., commit: "2dcf20f515e3eecf7e2126c182c54dd5f0f8f206"}' astra.yaml
+$ perl -pi -e 's/^analyses:\n/analyses:\n  before: {path: ., commit: "2dcf20f515e3eecf7e2126c182c54dd5f0f8f206"}\n/' astra.yaml
 $ astra validate; echo "exit $?"
 astra.yaml
   4:29 error COMMIT_NOT_FOUND the repository that holds this file has no commit `2dcf20f515e3eecf7e2126c182c54dd5f0f8f206`: give a full id of one of its commits, or fetch the commit into it
@@ -667,7 +667,7 @@ $ astra cache clear
 Cleared the cache in …/tour/work/05/cache.
 $ astra validate --offline; echo "exit $?"
 astra.yaml
-  5:5 error REMOTE_UNREACHABLE the commit `2dcf20f515e3eecf7e2126c182c54dd5f0f8f206` can't be fetched from `file://…/tour/work/05/build/noisy-line`, and no earlier fetch kept it: check the URL and the commit, and that git can reach the remote (with --offline, nothing is fetched)
+  5:5 error REMOTE_UNREACHABLE the commit `2dcf20f515e3eecf7e2126c182c54dd5f0f8f206` can't be fetched from `https://astra-examples.invalid/noisy-line`, and no earlier fetch kept it: check the URL and the commit, and that git can reach the remote (with --offline, nothing is fetched)
 astra.yaml: invalid, 1 error(s), 0 warning(s)
 exit 1
 $ astra validate

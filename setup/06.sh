@@ -20,6 +20,9 @@ find "$TOUR/work/06" -name __pycache__ -type d -prune -exec rm -rf {} +
 
 cd "$TOUR/work/06"
 python build.py
+# The chapter's astra commands read the examples' URLs from work/build, through env.sh's
+# url.<copy>.insteadOf: make it this chapter's copy.
+ln -sfn 06/build "$TOUR/work/build"
 
 mkdir -p plugin/tour_plugin-0.1.dist-info
 
@@ -90,6 +93,6 @@ version=$(python3 -c 'import platform; print(".".join(platform.python_version_tu
 if [ "$version" != 3.14 ]; then
   echo "setup/06.sh: python3 is $version, not 3.14: run.py's records name it, so every commit" \
        "id from \"Build the points\" on differs from the chapter's, and so do the cpython-3.14" \
-       "lines. For the chapter's ids, run ./bootstrap.sh inside nix develop, which builds" \
-       "astra-tools' environment on 3.14; then source env.sh again and rerun sh setup/06.sh" >&2
+       "lines. For the chapter's ids, run ./bootstrap.sh, which builds astra-tools'" \
+       "environment on Python 3.14; then source env.sh again and rerun sh setup/06.sh" >&2
 fi

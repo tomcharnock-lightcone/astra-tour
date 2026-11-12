@@ -25,8 +25,7 @@ $ cd work/01
   misspells `recipe` as `recipie`, the second fixes it. Step 8 declares it by URL.
 - `work/01/loaded.py` runs one `astra` command in-process and lists the modules it imported
   (step 5).
-- Steps 2, 4, 6 and 8 use `jq`. If `command -v jq` finds none, run `nix shell 'nixpkgs#jq'`
-  first: a shell with jq on PATH that keeps what `env.sh` exported.
+- Steps 2, 4, 6 and 8 use `jq`, which the README's *Before you start* asks for.
 - Every command runs in `work/01`, in order. Step 8 moves `ASTRA_CACHE_DIR`; `source env.sh`
   again before the next chapter.
 
@@ -635,30 +634,30 @@ nothing there yet
 $ git --no-pager -C upstream log --format='%h %s'
 345e144 Spell recipe right
 b26542c Count the words
-$ printf 'analyses:\n  up:\n    url: file://%s\n    commit: "%s"\n' "$TOUR/work/01/upstream" "$(git -C upstream rev-parse HEAD)" >> first/astra.yaml
+$ printf 'analyses:\n  up:\n    url: https://astra-tour.invalid/upstream\n    commit: "%s"\n' "$(git -C upstream rev-parse HEAD)" >> first/astra.yaml
 $ tail -4 first/astra.yaml
 analyses:
   up:
-    url: file://…/tour/work/01/upstream
+    url: https://astra-tour.invalid/upstream
     commit: "345e144f4fe5d2829fedf07f2305c3a83672df4a"
 $ astra validate first
 astra.yaml: valid, 0 error(s), 0 warning(s)
 $ astra info first
 astra.yaml
-  analyses  up: astra.yaml at 345e144f4fe5d2829fedf07f2305c3a83672df4a from file://…/tour/work/01/upstream
+  analyses  up: astra.yaml at 345e144f4fe5d2829fedf07f2305c3a83672df4a from https://astra-tour.invalid/upstream
   outputs   result: metric, json
-astra.yaml at 345e144f4fe5d2829fedf07f2305c3a83672df4a from file://…/tour/work/01/upstream
+astra.yaml at 345e144f4fe5d2829fedf07f2305c3a83672df4a from https://astra-tour.invalid/upstream
   inputs    words: words.txt
   outputs   count: metric, json
 $ ls -1 "$ASTRA_CACHE_DIR"
 remotes
 validity
 $ ls -1 "$ASTRA_CACHE_DIR"/remotes
-746cbe23d4eae1f14135338f70758f9b04e7e99098ceb2f027f3c036aa37c360
-$ printf %s "file://$TOUR/work/01/upstream" | sha256sum
-746cbe23d4eae1f14135338f70758f9b04e7e99098ceb2f027f3c036aa37c360  -
+440a6a82c1b44fc29da6003c40eb04903585645f92d58bf35551d1f899d16dd6
+$ printf %s https://astra-tour.invalid/upstream | shasum -a 256
+440a6a82c1b44fc29da6003c40eb04903585645f92d58bf35551d1f899d16dd6  -
 $ git -C "$ASTRA_CACHE_DIR"/remotes/* config remote.origin.url
-file://…/tour/work/01/upstream
+https://astra-tour.invalid/upstream
 $ git -C "$ASTRA_CACHE_DIR"/remotes/* for-each-ref --format='%(refname)'
 refs/astra/345e144f4fe5d2829fedf07f2305c3a83672df4a
 $ git -C "$ASTRA_CACHE_DIR"/remotes/* cat-file --batch-check --batch-all-objects 2>/dev/null | cut -d' ' -f2 | sort | uniq -c
@@ -676,13 +675,13 @@ $ perl -pi -e "s/$(git -C upstream rev-parse HEAD)/$(git -C upstream rev-parse H
 $ astra validate first; echo "exit code $?"
 astra.yaml
   10:5 error DECLARED_ANALYSIS_INVALID `up` names an analysis that isn't valid at its commit: it breaks MISSING_FIELD, UNKNOWN_FIELD, each reported at its place in that commit's files
-astra.yaml at b26542cb3af9c9b7ba52870d1a20541c2d9df231 from file://…/tour/work/01/upstream
+astra.yaml at b26542cb3af9c9b7ba52870d1a20541c2d9df231 from https://astra-tour.invalid/upstream
   7:5 error MISSING_FIELD `count` lacks `recipe`
   10:5 error UNKNOWN_FIELD `recipie` isn't a field here
 astra.yaml: invalid, 3 error(s), 0 warning(s)
 exit code 1
 $ astra validate first --json | jq -c '.diagnostics[0]'
-{"code":"DECLARED_ANALYSIS_INVALID","level":"error","message":"`up` names an analysis that isn't valid at its commit: it breaks MISSING_FIELD, UNKNOWN_FIELD, each reported at its place in that commit's files","location":{"file":"astra.yaml","pointer":"/analyses/up","line":10,"column":5,"key":null,"commit":null,"url":null},"related":[{"file":"astra.yaml","pointer":"/outputs/count","line":7,"column":5,"key":null,"commit":"b26542cb3af9c9b7ba52870d1a20541c2d9df231","url":"file://…/tour/work/01/upstream"},{"file":"astra.yaml","pointer":"/outputs/count","line":10,"column":5,"key":"recipie","commit":"b26542cb3af9c9b7ba52870d1a20541c2d9df231","url":"file://…/tour/work/01/upstream"}]}
+{"code":"DECLARED_ANALYSIS_INVALID","level":"error","message":"`up` names an analysis that isn't valid at its commit: it breaks MISSING_FIELD, UNKNOWN_FIELD, each reported at its place in that commit's files","location":{"file":"astra.yaml","pointer":"/analyses/up","line":10,"column":5,"key":null,"commit":null,"url":null},"related":[{"file":"astra.yaml","pointer":"/outputs/count","line":7,"column":5,"key":null,"commit":"b26542cb3af9c9b7ba52870d1a20541c2d9df231","url":"https://astra-tour.invalid/upstream"},{"file":"astra.yaml","pointer":"/outputs/count","line":10,"column":5,"key":"recipie","commit":"b26542cb3af9c9b7ba52870d1a20541c2d9df231","url":"https://astra-tour.invalid/upstream"}]}
 $ ls -1 "$ASTRA_CACHE_DIR"/validity | wc -l
 2
 $ git -C "$ASTRA_CACHE_DIR"/remotes/* for-each-ref --format='%(refname)'
@@ -710,9 +709,10 @@ What to notice
   going unnoticed for that reason).
 - The store is a bare repository whose `origin` is the URL. Each commit asked for is kept by
   a ref of its own, `refs/astra/<commit>`, so it is fetched once.
-- The store's name hashes a URL that holds the tour folder's absolute path. The `746cbe23…`
-  shown is for the tour at `/home/r/Projects/LightconeResearch/astra-tour`; elsewhere both
-  lines show another hash, the same in each.
+- The URL, `https://astra-tour.invalid/upstream`, stands for `upstream`'s repository, and no
+  network serves it: `env.sh` has git read it from `work/01/upstream` instead, through the
+  setting `url.<copy>.insteadOf` (the README's *URLs*). The store's name is the URL's SHA-256,
+  so it is the same wherever the tour is.
 - The fetch asks for no blobs (`--filter=blob:none`), yet the store holds all four blobs of
   the two commits (`words.txt` and `src/count.py`, the same in both, and two `astra.yaml`s).
   The `git upload-pack` that serves `upstream` ignores filters unless that repository sets
@@ -968,7 +968,7 @@ $ astra cache clear
 Cleared the cache in …/tour/work/01/cache.
 $ astra validate --offline first; echo "exit code $?"
 astra.yaml
-  13:5 error REMOTE_UNREACHABLE the commit `345e144f4fe5d2829fedf07f2305c3a83672df4a` can't be fetched from `file://…/tour/work/01/upstream`, and no earlier fetch kept it: check the URL and the commit, and that git can reach the remote (with --offline, nothing is fetched)
+  13:5 error REMOTE_UNREACHABLE the commit `345e144f4fe5d2829fedf07f2305c3a83672df4a` can't be fetched from `https://astra-tour.invalid/upstream`, and no earlier fetch kept it: check the URL and the commit, and that git can reach the remote (with --offline, nothing is fetched)
 astra.yaml: invalid, 1 error(s), 0 warning(s)
 exit code 1
 $ git -C upstream config uploadpack.allowFilter true
@@ -1044,7 +1044,7 @@ $ cp "$bad" "$good"
 $ astra validate first; echo "exit code $?"
 astra.yaml
   13:5 error DECLARED_ANALYSIS_INVALID `up` names an analysis that isn't valid at its commit: it breaks MISSING_FIELD, UNKNOWN_FIELD, each reported at its place in that commit's files
-astra.yaml at b26542cb3af9c9b7ba52870d1a20541c2d9df231 from file://…/tour/work/01/upstream
+astra.yaml at b26542cb3af9c9b7ba52870d1a20541c2d9df231 from https://astra-tour.invalid/upstream
   7:5 error MISSING_FIELD `count` lacks `recipe`
   10:5 error UNKNOWN_FIELD `recipie` isn't a field here
 astra.yaml: invalid, 3 error(s), 0 warning(s)

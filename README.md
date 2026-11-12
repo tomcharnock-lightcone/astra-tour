@@ -10,12 +10,12 @@ section.
 
 ## Before you start
 
-On NixOS (or anywhere with nix and flakes), once, with a network connection:
+You need git 2.31 or later, [uv](https://docs.astral.sh/uv/), jq, perl and bash (or zsh), and
+the usual Unix tools (sed, grep, cmp, sort). Once, with a network connection, in any folder:
 
 ```bash
-git clone <this repository> ~/Projects/LightconeResearch/astra-tour
-cd ~/Projects/LightconeResearch/astra-tour
-nix develop          # Python 3.14, uv, git, jq, perl, as the flake pins them
+git clone https://github.com/tomcharnock-lightcone/astra-tour
+cd astra-tour
 ./bootstrap.sh       # astra-tools and astra-spec at the tour's commits, and astra-tools' environment
 ```
 
@@ -23,42 +23,49 @@ nix develop          # Python 3.14, uv, git, jq, perl, as the flake pins them
 astra-tools `d14bf16` (the head of its `v0.1-rebuild`) and, beside it, astra-spec at the commit
 in its `astra-spec.pin` (`8a84440`, the short specification, with switches, where `outputs` is
 optional, its generated files where the LinkML template keeps them), and builds astra-tools'
-environment with every extra and the dev tools. It clones from GitHub; to clone from another
-remote that has those commits:
+environment with every extra and the dev tools, on CPython 3.14, which uv finds or else
+downloads. It clones from GitHub; to clone from another remote that has those commits:
 
 ```bash
 ASTRA_TOOLS_URL=<gitea>/astra-tools.git ASTRA_SPEC_URL=<gitea>/astra-spec.git ./bootstrap.sh
 ```
 
-After that, nothing needs the network. For each chapter, in a new terminal:
+After that, nothing needs the network. For each chapter, in a new terminal, in this folder:
 
 ```bash
-cd ~/Projects/LightconeResearch/astra-tour
-nix develop
 source env.sh
 ```
+
+With nix and flakes, `nix develop` in this folder gives a shell with all of these tools, Python
+3.14 among them, as `flake.nix` pins them; run `./bootstrap.sh` and the chapters in it. On
+NixOS without it, the Python uv downloads runs only where nix-ld is enabled.
 
 Things to know before step 1:
 
 - **Python 3.14.** `examples/run.py` writes the `python3` version into each record's
   environment (`urn:astra-examples:cpython-3.14`), so commit ids from the first commit that
-  holds a record ("Build the points") onwards match the chapters only on 3.14, which the flake
-  gives. On another version they differ, and the setups warn; codes, messages, places and the
-  results' bytes don't.
+  holds a record ("Build the points") onwards match the chapters only on 3.14, which
+  `bootstrap.sh` builds astra-tools' environment on, and `env.sh` puts first on PATH. On
+  another version they differ, and the setups warn; codes, messages, places and the results'
+  bytes don't.
 - **One shell per chapter.** Run `source env.sh` from this folder at the start of each
   chapter. Chapter 1's step 8 and chapter 5's Setup move `ASTRA_CACHE_DIR`. Chapter 4's
   `source ../shell.sh` fixes a git identity and date until that shell closes.
-- **Paths.** `…/tour` in the output stands for this folder's absolute path. Two kinds of
-  output contain that path. One is line-fit's commit ids, because line-fit declares
-  noisy-line by a `file://` URL. The other is the names of chapter 1's and chapter 5's cache
-  stores. Both match the chapters only with the tour at
-  `/home/r/Projects/LightconeResearch/astra-tour`; elsewhere they differ, and nothing else does.
-  The chapters work in `work/`. This folder is a git repository, and chapters 1 and 2 need
-  analyses with no repository above them, so `env.sh` sets `GIT_CEILING_DIRECTORIES` to this
-  folder: from inside `work/`, git never looks as high as this folder's own repository.
-- **Elided output.** The astra version string shows as `0.2.19.dev…`, and test timings as `…s`.
-- **jq.** `nix develop` puts jq on PATH. Where a chapter says to get it through
-  `nix shell 'nixpkgs#jq'`, you can skip that.
+- **URLs.** The chapters' analyses declare one another by URLs that stand for their
+  repositories, such as `https://astra-examples.invalid/noisy-line`, which no network serves.
+  `env.sh` has git, which astra-tools runs to fetch, read them from the copies under `work/`
+  instead (`url.<copy>.insteadOf`, through git's environment): chapter 1's `upstream` from
+  `work/01`, and the examples from `work/build`, a link that each chapter's setup points at the
+  examples it builds. So the commit ids and the names of the cache's stores are the chapters'
+  wherever this folder is.
+- **Paths.** `…/tour` in the output stands for this folder's absolute path. The chapters work
+  in `work/`. This folder is a git repository, and chapters 1 and 2 need analyses with no
+  repository above them, so `env.sh` sets `GIT_CEILING_DIRECTORIES` to this folder: from inside
+  `work/`, git never looks as high as this folder's own repository.
+- **Elided output.** The astra version string shows as `0.2.19.dev…`, Python's patch release
+  as `3.14.…`, and test timings as `…s`.
+- **Other systems.** The output is GNU's, on Linux. BSD's `uniq -c` and `wc`, as on macOS, pad
+  their counts otherwise; the tour hasn't been run there.
 - **Citations.** The chapters cite the published specification,
   [astra-spec.org/0.1/specification](https://astra-spec.org/0.1/specification/): the short
   one, which astra-tools runs against, also at `repos/astra-spec-pinned/docs/specification.md`.
@@ -66,12 +73,8 @@ Things to know before step 1:
   a rule by its code, such as `MISSING_DECISION`, which the Rules table states, and anything else
   by a section, then the term it defines in bold there if it defines one, such as Elements
   *switch*, Results *uses* or Rules *valid*, linking only the section (Schema files defines
-  none). astra-tools' code cites it the same way. A `§n` in the tour's own `record.py` and
-  `examples/run.py` is the long specification the short one replaced: astra-spec's tag
-  `v0.1-long-spec`, which the clone has
-  (`git -C repos/astra-spec show v0.1-long-spec:docs/specification.md`).
-  `src/astra/<path>.py:<line>` points into astra-tools at `d14bf16`. `examples/…` is the tour's
-  copy of astra-examples.
+  none). astra-tools' code cites it the same way. `src/astra/<path>.py:<line>` points into
+  astra-tools at `d14bf16`. `examples/…` is the tour's copy of astra-examples.
 - **The specification versus astra-tools.** Each chapter says which is which. These are
   astra-tools' own: the three own codes, the plan's notes, the four JSON shapes, the exit
   codes, the cache, and when a rule goes unchecked. No reading of the specification's meaning
