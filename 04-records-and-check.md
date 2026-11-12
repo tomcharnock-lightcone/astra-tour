@@ -103,7 +103,7 @@ Under the hood
   (`src/astra/cli/__init__.py:50-51`); an `--at` that names no commit is a usage error
   (`src/astra/cli/check.py:38-39`).
 - The plan's `command` line is `render_command(result, folder)`
-  (`src/astra/cli/text/plan.py:39`, `src/astra/plan.py:711`): placeholders filled verbatim, no
+  (`src/astra/cli/text/plan.py:39`, `src/astra/plan.py:716`): placeholders filled verbatim, no
   shell quoting, paths relative to the folder the recipe runs in. `{decisions.<entry>}` is the
   option the universe selects: each decision a planned result lists is set where it is built,
   or the file breaks `MISSING_DECISION` and has no plan.
@@ -215,7 +215,7 @@ What to notice
   the next one, `9b54a3c`.
 
 Under the hood
-- `api.plan()` (`src/astra/api.py:94`) gives `Result`s (`src/astra/plan.py:77`): names, places
+- `api.plan()` (`src/astra/api.py:94`) gives `Result`s (`src/astra/plan.py:78`): names, places
   (`name`, `address`, `record`, `bytes`), one `Read` per entry of `inputs`, the options its
   decisions select, the command template, the folder it runs in, and whether it is read
   through a record (`read_only`) or run at a commit (`run_at`).

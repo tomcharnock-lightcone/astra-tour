@@ -239,8 +239,8 @@ What to notice:
 Under the hood:
 - `info` heads each member with `file_named` (`src/astra/cli/text/info.py:16`, `src/astra/cli/text/__init__.py:23-29`), from the `Location` that `Stack.location` builds with the member's commit and URL (`src/astra/stack.py:213-219`), and prints each declaration's row through `_reached` (`info.py:42`), which names the member it reached the same way. It checks nothing: it exits 1 only where there is no stack to show (the root's file isn't a valid document, or the root is in no repository), so an unreachable declaration still exits 0, shown as "nothing (unreachable)".
 - `Identity` (`stack.py:48-59`) is a folder and a commit, `None` for the working tree.
-- `read_only = result.owner.commit != stack.root.commit` (`src/astra/plan.py:417`); the text plan prints "read through its record" for it (`src/astra/cli/text/plan.py:30`).
-- `render_command` writes `<commit>:<path>` for an entry read at a commit that its `got` doesn't give (`plan.py:743`).
+- `read_only = result.owner.commit != stack.root.commit` (`src/astra/plan.py:418`); the text plan prints "read through its record" for it (`src/astra/cli/text/plan.py:30`).
+- `render_command` writes `<commit>:<path>` for an entry read at a commit that its `got` doesn't give (`plan.py:748`).
 
 ## 5. Three forms of declaration, three ways of reading
 

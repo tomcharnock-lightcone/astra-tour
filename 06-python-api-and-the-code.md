@@ -42,7 +42,7 @@ $ cd work/06/build/line-fit
 - `ASTRA_TOOLS` is the astra-tools checkout whose `src/astra` the `python` on PATH imports
   (`repos/astra-tools`, which `bootstrap.sh` made): the folder that holds `src/astra/api.py`.
   Steps 7, 9 and 10 grep it and run its tests, read only.
-- The whole chapter assumes that checkout at `30839ed` (the head of its `v0.1-rebuild`), its
+- The whole chapter assumes that checkout at `bf5650f` (the head of its `v0.1-rebuild`), its
   venv built with astra-spec installed from `../astra-spec-pinned` at the commit in its
   `astra-spec.pin` (`31a1a8b`, the short specification with switches), as its CLAUDE.md's
   *Development* says and `bootstrap.sh` does.
@@ -181,7 +181,7 @@ Under the hood:
   at `:185`, each a frozen dataclass. Rules, plan, view and check never re-resolve what a file
   writes: they read `element`. `Stack.element` (`src/astra/stack.py:201`) resolves an address
   afterwards in two places only: one a caller asks for (`plan.root_output`, for `outputs=`,
-  `src/astra/plan.py:350`), and a place's name at a record's commit (`src/astra/check.py:365`).
+  `src/astra/plan.py:351`), and a place's name at a record's commit (`src/astra/check.py:365`).
 
 ## 3. plan: the planned results and their commands
 
@@ -238,8 +238,8 @@ What to notice:
 
 Under the hood:
 
-- `plan.plan` (`src/astra/plan.py:186`) gets the planned results from `universes.building`
-  (`:209`), given what the root reaches from its own outputs (`_run`, `:208`); `visit` (`:230`)
+- `plan.plan` (`src/astra/plan.py:187`) gets the planned results from `universes.building`
+  (`:210`), given what the root reaches from its own outputs (`_run`, `:209`); `visit` (`:231`)
   then makes each one after what it reads, depth first, and leaves out any whose planning isn't
   determined, which happens only on an invalid stack, for `check`.
 - `Result` (`:77`) and `Read` (`:62`) are frozen dataclasses: the API hands out objects, and
@@ -431,7 +431,7 @@ Under the hood:
 - Each `to_json` is a hand-written dict over `dataclasses.asdict` of the small pieces (a place,
   an identity, a reason, a location): `ValidationReport.to_json` (`src/astra/validate.py:43`),
   `Diagnostic.to_json`, which is `asdict(self)` (`src/astra/diagnostics.py:44`),
-  `Plan.to_json` (`src/astra/plan.py:124`, with the index at `:127`), `UniverseView.to_json`
+  `Plan.to_json` (`src/astra/plan.py:125`, with the index at `:128`), `UniverseView.to_json`
   (`src/astra/view.py:62`; `fields` is `member.document.value`, `:80`) and
   `CheckReport.to_json` (`src/astra/check.py:147`).
 - `write_json` prints `json.dumps(document, indent=2, ensure_ascii=False)`
@@ -501,7 +501,7 @@ src/astra/check.py:66:        "STALE_RESULT",
 src/astra/check.py:327:                    reasons.append(self.reason("STALE_RESULT", then, at))
 src/astra/check.py:333:                    reasons.extend(self.reason("STALE_RESULT", change, at) for change in changes)
 $ git grep -n 'where it selected' -- src/astra
-src/astra/check.py:654:                f"`{step.universe.id}`, where it selected `{before.option}` at {commit}"
+src/astra/check.py:673:                f"`{step.universe.id}`, where it selected `{before.option}` at {commit}"
 $ git grep -n 'selects {' -- src/astra
 src/astra/check.py:460:                    f"`{written}` selects {_option(option)} in `{result.universe.id}`, where it "
 $ cd "$TOUR/work/06/build/line-fit"
@@ -537,7 +537,7 @@ What to notice:
   another. The message of step 5, "`method` selects `ols` in `huber`, where it selected
   `huber`", spans an f-string's line break, so `where it selected` finds only another message,
   the one for a switch whose decision selects another option than at the record's commit
-  (`check.py:654`); grep a shorter fixed part.
+  (`check.py:673`); grep a shorter fixed part.
 - The catalogue says `schema version dev`: the tour's astra-spec is a development build, not a
   release.
 
@@ -787,7 +787,7 @@ $ cat astra-spec.pin
 $ python -m pytest -q -p no:cacheprovider --collect-only | sed -n 's/::.*//p' | sort | uniq -c | sort -rn | head -8
     131 tests/test_fixtures.py
     122 tests/test_conformance.py
-     75 tests/test_check.py
+     80 tests/test_check.py
      73 tests/test_import_cost.py
      55 tests/test_validate.py
      52 tests/test_switches.py
@@ -916,7 +916,7 @@ $ git checkout --quiet astra.yaml
   undetermined (design §4.13 case 6; `None` from `Meaning.taken`,
   `src/astra/universes.py:625`), and so is the planning of what is reached only through it:
   `fit#huber`, and `comparison`, which reads it, so `plan._reads` gives `None`
-  (`src/astra/plan.py:393`) and `visit` leaves it out.
+  (`src/astra/plan.py:394`) and `visit` leaves it out.
 - Case 12: neither gets statuses, and nor does the evidence, which cites `comparison`
   (`src/astra/check.py:577-578`). The summary line says so, in astra-tools' own words
   (`src/astra/cli/text/check.py:67`). `fit#ols` keeps its: in `ols`, `fitted` takes `fit`.

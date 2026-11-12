@@ -244,7 +244,7 @@ What to notice:
 Under the hood:
 
 - `src/astra/cli/universe.py:47` resolves the id with `plan.root_universe`
-  (`src/astra/plan.py:331`), which refuses an unknown id or an import; click turns that into a
+  (`src/astra/plan.py:332`), which refuses an unknown id or an import; click turns that into a
   usage error, exit 2 (`src/astra/cli/universe.py:49`).
 - `src/astra/cli/universe.py:50` computes `universes.selections(stack)`: the selection of every
   universe of every analysis in the stack, not only the one asked for.
@@ -427,8 +427,8 @@ Under the hood:
 
 - `src/astra/cli/plan.py:40` calls `api.plan`, which validates first: `src/astra/api.py:180`
   raises `InvalidAnalysisError`, and `src/astra/cli/plan.py:41-43` prints its report and exits 1.
-- `src/astra/plan.py:186` `plan()` builds a rules `Context` (:204), the root's run (:208,
-  `universes.run`, step 3) and `universes.building` (:209), which gives the planned results.
+- `src/astra/plan.py:187` `plan()` builds a rules `Context` (:205), the root's run (:209,
+  `universes.run`, step 3) and `universes.building` (:210), which gives the planned results.
 - Per universe or once is `src/astra/universes.py:385` `per_universe`: outputs other than a
   switch that list `decisions` (:391-396), then, until nothing grows, outputs with an unpinned
   entry naming a switch or one of those (:397-409). Every entry of `comparison` has a pin, so it
@@ -444,8 +444,8 @@ Under the hood:
   names, to the case each takes there (:703-716).
 - `places` (`src/astra/universes.py:488`) writes the address (:498), the record (:499) and the
   bytes (:500).
-- `src/astra/plan.py:230` `visit` puts each result after the results it reads; `_reads` (:361)
-  and `_result` (:398) fill in what each entry reads and the rest of the result.
+- `src/astra/plan.py:231` `visit` puts each result after the results it reads; `_reads` (:362)
+  and `_result` (:399) fill in what each entry reads and the rest of the result.
 - The text renders each command at `src/astra/cli/text/plan.py:39`:
   `render_command(result, folder)`, with `folder` the result's `workdir`, or `.`.
 
@@ -490,7 +490,9 @@ What to notice:
   `clean` results they read.
 - `not_built` is the plan's report of a missing case: an output reached in a universe where a
   switch on the way has no case for the option selected there isn't built there. That breaks no
-  rule (Elements *switch*), so the plan says where, and which switch and option (Try 4).
+  rule (Elements *switch*), so the plan says where, and which switch and option (Try 4). A
+  switch that nothing reads, as one the analysis plans from, gets the same note where it takes
+  nothing; one that something reads is left to its reader's note.
 - `outside_folder` names `CODE_OUTSIDE_ANALYSIS`, a runner rule
   ([Rules](https://astra-spec.org/0.1/specification/#rules)) that no validator checks; the note
   is astra-tools reading the command as text. It has a location (41:16, the command's value); the
@@ -500,17 +502,19 @@ What to notice:
 
 Under the hood:
 
-- `src/astra/plan.py:437` `_notes` yields the kinds in a fixed order (:453-460).
-- `_same_computations` (`src/astra/plan.py:571`): a computation is the output, what it reads and
-  the options selected (:589). A read of another planned result counts as that result's
-  computation (:583-588), so two `plain` results that read one `clean` computation and select
+- `src/astra/plan.py:438` `_notes` yields the kinds in a fixed order (:454-461).
+- `_same_computations` (`src/astra/plan.py:576`): a computation is the output, what it reads and
+  the options selected (:594). A read of another planned result counts as that result's
+  computation (:588-593), so two `plain` results that read one `clean` computation and select
   the same options are one computation too (Try 1).
-- `_not_built` (`src/astra/plan.py:546`): for each output the root's run reaches in a universe,
-  `Meaning.cause` (`src/astra/universes.py:672`) gives the first switch on the way with no case
-  there; one note for each output, switch and option, with the universes (:551-557).
-- `_outside_folder` (`src/astra/plan.py:608`): `_paths` (:663) takes each word of the command
-  outside its placeholders, which it masks (:667), and skips absolute paths; `_climbs` (:675)
-  counts `..` against the folders before them; `below` (:620) looks for an `astra.yaml` in each
+- `_not_built` (`src/astra/plan.py:547`): for each output the root's run reaches in a universe,
+  and each switch it reaches there that no entry of `inputs` or case reached there reads
+  (:555-559), `Meaning.cause` (`src/astra/universes.py:672`) gives the first switch on the way
+  with no case there, maybe that switch itself; one note for each output or switch, switch and
+  option, with the universes (`src/astra/plan.py:563-573`).
+- `_outside_folder` (`src/astra/plan.py:613`): `_paths` (:668) takes each word of the command
+  outside its placeholders, which it masks (:672), and skips absolute paths; `_climbs` (:680)
+  counts `..` against the folders before them; `below` (:625) looks for an `astra.yaml` in each
   folder on the way to a path that stays inside.
 - `src/astra/cli/text/plan.py:40` keeps the `built` notes; :41-48 list them under `--notes`;
   :53-68 count them by kind.
@@ -561,21 +565,21 @@ What to notice:
 
 Under the hood:
 
-- `src/astra/plan.py:711` `render_command`: `depth` and `top` (:732-733) find the checkout's top
+- `src/astra/plan.py:716` `render_command`: `depth` and `top` (:737-738) find the checkout's top
   from `cwd` and the result's `workdir`, since every path in the plan is from that top; `path`
-  (:736) makes each relative to `cwd` or absolute.
-- `_TEMPLATE` (`src/astra/plan.py:706`) reads `{{`, `}}` and `{…}` from the left, as
-  `UNDECLARED_TEMPLATE_REF` says. `fill` (:747): a brace pair (:749-750), `{output}` as the
-  first name's bytes (:751-752), `{inputs}` joined by spaces (:753-754), `{inputs.<entry>}`
-  (:755-757), and `{decisions.<entry>}` as `result.decisions[entry]` (:758), which a valid stack
+  (:741) makes each relative to `cwd` or absolute.
+- `_TEMPLATE` (`src/astra/plan.py:711`) reads `{{`, `}}` and `{…}` from the left, as
+  `UNDECLARED_TEMPLATE_REF` says. `fill` (:752): a brace pair (:754-755), `{output}` as the
+  first name's bytes (:756-757), `{inputs}` joined by spaces (:758-759), `{inputs.<entry>}`
+  (:760-762), and `{decisions.<entry>}` as `result.decisions[entry]` (:763), which a valid stack
   always fills.
 - `where` (:740-743): an entry read at a commit renders as `<commit>:<path>` unless `got=` gives
   where the runner put its bytes.
 - The validator scans braces with a regex of its own, `src/astra/rules/recipes.py:33`, which
   also matches a stray `{` or `}`. `render_command` assumes a command that passed it.
-- The filters: `src/astra/plan.py:211` `chosen`; with `universes` alone, a result is kept where
-  `result.universe in wanted` (:213), which `None`, built once, never is. `root_output` (:347)
-  refuses a switch (:351-355).
+- The filters: `src/astra/plan.py:212` `chosen`; with `universes` alone, a result is kept where
+  `result.universe in wanted` (:214), which `None`, built once, never is. `root_output` (:348)
+  refuses a switch (:352-356).
 
 ## 7. The plan as JSON: astra-plan/1
 
@@ -671,12 +675,12 @@ What to notice:
 
 Under the hood:
 
-- `src/astra/plan.py:124` `Plan.to_json`; the index of each result by its output and universe
-  (:127), each read as `{entry, path, commit, result, via}` (:129-138), each note (:145-160).
-- `via` is each step's case as written (`_result`, `src/astra/plan.py:403`), from
+- `src/astra/plan.py:125` `Plan.to_json`; the index of each result by its output and universe
+  (:128), each read as `{entry, path, commit, result, via}` (:130-139), each note (:146-161).
+- `via` is each step's case as written (`_result`, `src/astra/plan.py:404`), from
   `Meaning.through` (`src/astra/universes.py:696`); `Read.entry` stays the entry as written.
-- `Result.decisions` is `selected` (`src/astra/plan.py:692`, called at :428): each entry of the
-  output's `decisions` as written, with `min(selection.options(...), default=None)` (:700).
+- `Result.decisions` is `selected` (`src/astra/plan.py:697`, called at :429): each entry of the
+  output's `decisions` as written, with `min(selection.options(...), default=None)` (:705).
 
 ## 8. One universe: astra view
 
@@ -801,7 +805,7 @@ $ git checkout --quiet astra.yaml
 - All three `clean` results select `spikes: drop`: one computation in three results.
 - With `centre: mean`, `summary` takes `plain` in `median` as in `mean`, and `plain#median` has
   the same command and options as `plain#mean`; its `clean` read is the same computation as
-  `plain#mean`'s, so the two are one computation too (`src/astra/plan.py:583-588`). Two notes,
+  `plain#mean`'s, so the two are one computation too (`src/astra/plan.py:588-593`). Two notes,
   five results.
 - From the clean file, `median` inherits `spikes: keep`, and `mean` requires `spikes.drop`.
   `centre` is in play in `median`, which uses it. The breach is reported at `median`'s own key
@@ -956,9 +960,13 @@ $ astra validate
 astra.yaml: valid, 0 error(s), 0 warning(s)
 $ astra plan --notes | sed -n '/^note/,$p'
 note astra.yaml:71:5 `quartiles` has no planned result: only a case of `quartiles_at_p25` names it, so it is planned only where something planned reads it, and nothing does, so a check of the root never covers it
+note astra.yaml:80:5 `quartiles_if_trimmed` isn't built in `mean`: it has no case there for `mean`, the option its decision selects
+note astra.yaml:80:5 `quartiles_if_trimmed` isn't built in `trimmed`: `quartiles_at_p25` has no case there for `p10`, the option its decision selects
+note astra.yaml:80:5 `quartiles_if_trimmed` isn't built in `median`: it has no case there for `median`, the option its decision selects
 note `clean#trimmed`, `clean#median` are one computation, with the same command, inputs and selected options: a runner can build one and place its bytes at each
 7 planned result(s), and notes, none of them a breach:
   1 output(s) have no planned result
+  3 output(s) aren't built in some universe, where a switch has no case
   1 computation(s) repeated across universes, in 2 result(s)
 $ astra view mean | grep quartiles
   quartiles    no planned result
@@ -971,8 +979,9 @@ $ astra view trimmed | grep quartiles
 $ perl -pi -e 's/cases: \{p25: quartiles\}/cases: {p10: quartiles}/' astra.yaml
 $ astra plan | grep '^quartiles'
 quartiles#trimmed
-$ astra plan | tail -n 2
+$ astra plan | tail -n 3
 8 planned result(s), and notes, none of them a breach (--notes lists them):
+  2 output(s) aren't built in some universe, where a switch has no case
   1 computation(s) repeated across universes, in 2 result(s)
 $ perl -pi -e 's|^universes:|  report:\n    type: report\n    format: md\n    inputs: [quartiles_if_trimmed]\n    recipe:\n      command: python3 src/report.py {inputs} {output}\n\nuniverses:|' astra.yaml
 $ astra plan | grep -e '^report' -e '^quartiles'
@@ -999,21 +1008,28 @@ $ git checkout --quiet astra.yaml
   matters is the outer one, the short specification's convention for nesting.
 - `quartiles` has no planned result: a case names it, so it is planned only where something
   planned reads it, and in `trimmed`, which selects `p10`, `quartiles_at_p25` takes nothing.
-  The `unplanned` note says so (`_unplanned`, `src/astra/plan.py:502`). Its location, 71:5, is
-  where the output's value starts, `type:`, one line below `quartiles:`. No `not_built` note:
-  that kind is about an output reached where it isn't built, and nothing reaches `quartiles`.
+  The `unplanned` note says so (`_unplanned`, `src/astra/plan.py:503`). Its location, 71:5, is
+  where the output's value starts, `type:`, one line below `quartiles:`. `quartiles` gets no
+  `not_built` note, as nothing reaches it.
+- `quartiles_if_trimmed` does get them. Nothing reads it and no case names it, so it is a
+  planning root, reached in every universe, and the plan says where it isn't built and why: in
+  `mean` and `median` it has no case for the option `centre` selects ("it has no case there"),
+  and in `trimmed` it takes `quartiles_at_p25`, which has none for `p10`. All three are at its
+  entry (80:5). `quartiles_at_p25`, which its case reads, gets none of its own.
 - The view shows each switch in each universe, reached or not. In `trimmed`,
   `quartiles_at_p25` takes nothing. In `mean`, `cut` is unset, so what it would take is
   undetermined (design §4.13 case 6); nothing reaches it there, so nothing uses `cut` there and
   no rule is broken. `quartiles` reads only `clean`, so it is built in every universe, and
   planned in none.
 - With its case for `p10`, `quartiles_at_p25` takes `quartiles` in `trimmed`: eight results,
-  `quartiles#trimmed` the eighth, and the `unplanned` note is gone.
+  `quartiles#trimmed` the eighth, and the `unplanned` note is gone, as is the `not_built` note
+  for `trimmed`. The two for `mean` and `median` stay.
 - `report` reads `quartiles_if_trimmed` without a pin, so it is built per universe, and as a
   planning root it is reached in each. In `mean` and `median`, `quartiles_if_trimmed` has no
   case for the option `centre` selects, so `report` isn't built there: nine results. A missing
   case breaks no rule; the plan's `not_built` notes say where, and which switch and option
-  (`_not_built`, `src/astra/plan.py:546`), at `report` (84:5), one for each option.
+  (`_not_built`, `src/astra/plan.py:547`), at `report` (84:5), one for each option. Now that
+  `report` reads `quartiles_if_trimmed`, the switch's own notes go: they are left to its reader.
 - `src/quartiles.py` and `src/report.py` don't exist. Nothing notices before a run: the plan
   reads a command only for its placeholders and, for `outside_folder`, for paths that leave the
   folder or pass through a folder holding an `astra.yaml`; it never looks for the file a path
@@ -1039,8 +1055,8 @@ $ git checkout --quiet astra.yaml
   folder the recipe runs in or absolute. `astra-plan/1` carries the template, read indices, the
   cases each read goes through (`via`), and an option for every decision a result lists.
 - The notes are astra-tools' own, never diagnostics. `same_computation` follows computations
-  through what results read, and `not_built` says where a missing case leaves an output unbuilt,
-  and why.
+  through what results read, and `not_built` says where a missing case leaves an output, or a
+  switch nothing reads, unbuilt, and why.
 - `astra view` is the effective selection, which decisions the universe uses, the case each
   switch takes, and the planned results of one universe, beside the document as written.
 - A constraint is checked on the option that carries it, for a decision in play. Broken through

@@ -20,7 +20,7 @@ nix develop          # Python 3.14, uv, git, jq, perl, as the flake pins them
 ```
 
 `bootstrap.sh` clones astra-tools and astra-spec into `repos/` (git-ignored), checks out
-astra-tools `30839ed` (the head of its `v0.1-rebuild`) and, beside it, astra-spec at the commit
+astra-tools `bf5650f` (the head of its `v0.1-rebuild`) and, beside it, astra-spec at the commit
 in its `astra-spec.pin` (`31a1a8b`, the short specification, with switches), and builds
 astra-tools' environment with every extra and the dev tools. It clones from GitHub; to clone
 from another remote that has those commits:
@@ -70,7 +70,7 @@ Things to know before step 1:
   replaced, which astra-tools' code still cites: astra-spec's tag `v0.1-long-spec`, which the
   clone has (`git -C repos/astra-spec show v0.1-long-spec:docs/specification.md`).
   `design §n` is astra-tools' `design/2026-11-07-v0.1-tooling-design.md`.
-  `src/astra/<path>.py:<line>` points into astra-tools at `30839ed`. `examples/…` is the tour's
+  `src/astra/<path>.py:<line>` points into astra-tools at `bf5650f`. `examples/…` is the tour's
   copy of astra-examples.
 - **The specification versus astra-tools.** Each chapter says which is which. These are
   astra-tools' own: the three own codes, the plan's notes, the four JSON shapes, the exit
@@ -172,15 +172,16 @@ Module paths are under astra-tools' `src/astra/`.
   **uses**: the decisions a universe uses, those that the results planned there list and those
   that the switches reached there switch on: `Run.used` (`universes.py:758`), and on some
   branch, every case followed, `Run.branches` (`universes.py:764`).
-- **planned result**: `Result` (`plan.py:77`), one result to build or to read: names, places,
+- **planned result**: `Result` (`plan.py:78`), one result to build or to read: names, places,
   reads, decisions, the command template, the folder it runs in. A result is **read-only**
   when its analysis is at a commit other than the root's: it is read through its record, never
   built. **place**: `Place` (`universes.py:478`), a name's address, record path and bytes path.
-  **read**: `Read` (`plan.py:62`), one entry of a result's inputs: its path, commit and the
+  **read**: `Read` (`plan.py:63`), one entry of a result's inputs: its path, commit and the
   result it reads, and `via`, each case taken on the way where it reads a switch.
-- **note**: `Note` (`plan.py:102`), one of the plan's remarks, never a diagnostic:
-  `fallback_pin`, `two_names`, `unplanned`, `not_built` (an output a switch leaves unbuilt,
-  with the switch and the option), `same_computation`, `outside_folder`.
+- **note**: `Note` (`plan.py:103`), one of the plan's remarks, never a diagnostic:
+  `fallback_pin`, `two_names`, `unplanned`, `not_built` (an output, or a switch nothing reads,
+  that a switch leaves unbuilt, with the switch and the option), `same_computation`,
+  `outside_folder`.
 - **stand-in**: the `StandIn` protocol (`sources/standins.py:32`): Git LFS, git-annex, DVC, and
   anything registered under `astra.standins`. **environment scheme**: `environments.py`, under
   `astra.environments`.

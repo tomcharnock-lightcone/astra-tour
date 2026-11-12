@@ -289,12 +289,12 @@ Under the hood
 - `src/astra/cli/plan.py:40` calls `api.plan`, which is `plan_stack(_valid(path), …)`
   (`src/astra/api.py:106`). `_valid` (`src/astra/api.py:173`) validates first and raises
   `InvalidAnalysisError` on a broken `MUST` (`src/astra/api.py:181`).
-- `plan.plan` (`src/astra/plan.py:186`) builds the results; `universes.places`
+- `plan.plan` (`src/astra/plan.py:187`) builds the results; `universes.places`
   (`src/astra/universes.py:488`) gives each name's record and bytes
   (`src/astra/universes.py:499` and `:500`).
-- `Plan.to_json` (`src/astra/plan.py:124`) is `astra-plan/1`. The text renders each command
+- `Plan.to_json` (`src/astra/plan.py:125`) is `astra-plan/1`. The text renders each command
   with `render_command(result, folder)` (`src/astra/cli/text/plan.py:39`;
-  `src/astra/plan.py:711`).
+  `src/astra/plan.py:716`).
 
 ## 5. `astra --help`: commands loaded lazily
 
@@ -503,12 +503,12 @@ holds as written:
 
 - Foundations: `Catalogue.load` reads `rules.json` (`src/astra/diagnostics.py:107`) at every
   call, and `validate`, `plan` and `view` each call it (`src/astra/validate.py:81`,
-  `src/astra/plan.py:204`, `src/astra/view.py:104`). `grammar.py` and `model.py` do no IO.
+  `src/astra/plan.py:205`, `src/astra/view.py:104`). `grammar.py` and `model.py` do no IO.
 - Rules, plan and view take a `Stack` and do their IO through its readers. `rules/inputs.py`
   asks which inputs are tracked (`src/astra/rules/inputs.py:54`: `git ls-files` in the working
   tree) and stats them (`:84`, `:110`); a stand-in is recognised by reading the file
   (`src/astra/sources/standins.py:77`); the plan's `outside_folder` note stats through a
-  reader (`src/astra/plan.py:630`).
+  reader (`src/astra/plan.py:635`).
 - `rules/commits.py` goes further: `git merge-base --is-ancestor` for `COMMIT_NOT_ANCESTOR`
   (`src/astra/rules/commits.py:90`), the cache's `validity` read and written (`:187`,
   `:202`), and, on a miss, a whole nested `validate` on a `CommitReader` (`:192`), which can
@@ -879,7 +879,7 @@ note astra.yaml:7:16 the command names `src/result.py`, inside `src`, which hold
   `src` now holds an analysis of its own. A note is astra-tools' own remark (design §4.6): no
   code is reported, and the exit code stays 0. It is found by looking for an `astra.yaml` in
   each folder on the way to a path the command names (`_outside_folder`,
-  `src/astra/plan.py:608`; the note at `:655`).
+  `src/astra/plan.py:613`; the note at `:660`).
 
 </details>
 

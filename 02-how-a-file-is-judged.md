@@ -727,8 +727,6 @@ astra.yaml
   27:28 error OUTPUT_CYCLE `fit` depends on itself through `comparison`: `fit` → `comparison` → `fit`
   36:14 error OUTPUT_CYCLE `comparison` depends on itself through `fit#ols`: `comparison` → `fit` → `comparison`
   36:23 error OUTPUT_CYCLE `comparison` depends on itself through `fit#huber`: `comparison` → `fit` → `comparison`
-astra.yaml
-  53:19 error STALE_EVIDENCE `comparison` cites no result: its output is built in none of the root's universes
 astra.yaml: invalid, 3 error(s), so only the results it leaves determined; 0 place(s) of planned results, 0 unchanged, 0 stale, 0 missing; 0 absent
 exit 1
 $ git checkout -q astra.yaml
@@ -740,13 +738,12 @@ $ git checkout -q astra.yaml
 - No result gets a status, not even `points`. line-fit plans from its own outputs, and
   noisy-line's `points` only because `fit` reads it (the short specification's Results
   *plans*); with `fit`'s planning undetermined, no planned result reads `points`.
-- The finding that cites `comparison` gets `STALE_EVIDENCE`, under an `astra.yaml` heading of
-  its own: evidence comes after the results. `_cited` keeps only results that are planned
-  (`src/astra/check.py:602-617`), and an output on a cycle has none, so astra-tools reports it
-  as built nowhere. Its own `_Checker.evidence` docstring (`:561-567`) and design §4.13 case 12
-  give no status to evidence that cites a result whose planning isn't determined, as chapter
-  6's Try 1 shows for one a switch leaves undetermined: here astra-tools departs from both. The
-  summary counts the validator's three errors only.
+- The finding that cites `comparison` gets no status, so no `STALE_EVIDENCE`: `comparison` is
+  on the cycle, so whether it is built is undetermined, and design §4.13 case 12 gives no status
+  to evidence citing a result whose planning isn't determined, as chapter 6's Try 1 shows for
+  one a switch leaves undetermined. `_cited` (`src/astra/check.py:602-636`) tells that apart
+  from an output that isn't built, which cites nothing and leaves the evidence `missing`. The
+  summary's three errors are the validator's.
 - Exit 1: the analysis breaks a `MUST`.
 
 </details>
