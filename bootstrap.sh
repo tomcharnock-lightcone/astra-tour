@@ -10,7 +10,7 @@
 # fetches and checks out again, and keeps what is already there.
 set -euo pipefail
 
-ASTRA_TOOLS_COMMIT=bf5650fc8eebb53ba98c297dcd769674f5e05c68  # v0.1-rebuild: switches in place of when, no container
+ASTRA_TOOLS_COMMIT=a01c66535ca8313baf25a365d163eec3ac12bae5  # v0.1-rebuild: switches in place of when, no container, outputs optional
 : "${ASTRA_TOOLS_URL:=https://github.com/LightconeResearch/astra-tools.git}"
 : "${ASTRA_SPEC_URL:=https://github.com/LightconeResearch/astra-spec.git}"
 

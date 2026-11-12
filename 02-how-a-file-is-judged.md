@@ -201,14 +201,15 @@ astra.yaml
   17:13 error EMPTY_COLLECTION `inputs` is empty
 astra.yaml: invalid, 1 error(s), 0 warning(s)
 $ git checkout -q astra.yaml
-$ perl -0pi -e 's/^outputs:\n.*/outputs: {}\n/ms' astra.yaml && astra validate
+$ perl -0pi -e 's/^outputs:/decisions:\n  noise:\n    options: {}\n\noutputs:/m' astra.yaml && astra validate
 astra.yaml
-  9:10 error EMPTY_COLLECTION `outputs` is empty
+  11:14 error EMPTY_COLLECTION `options` is empty
 astra.yaml: invalid, 1 error(s), 0 warning(s)
 $ git checkout -q astra.yaml
 ```
 
-The last edit replaces the whole `outputs:` map, to the end of the file, with `outputs: {}`.
+The last edit adds a decision, `noise`, above `outputs:`, with an empty map of options:
+`options: {}`.
 
 What to notice:
 
@@ -222,9 +223,10 @@ What to notice:
 - So are the line and column: the key's node where a key is named, otherwise the value's
   node. A block map's node starts at its first key, so `MISSING_FIELD` on `recipe` is at
   19:7, the `comand` line, not at `recipe:` on line 18. An empty flow map's starts at its `{`:
-  9:10.
-- `inputs: []` and `outputs: {}` are both `EMPTY_COLLECTION`, from two keywords: `minItems` on
-  a list, `minProperties` on a map (step 4 shows the keywords behind each code).
+  11:14.
+- `inputs: []` and `options: {}` are both `EMPTY_COLLECTION`, from two keywords: `minItems` on
+  a list, `minProperties` on a map (step 4 shows the keywords behind each code). `outputs: {}`
+  would pass: like every map at the top of the file, `outputs` may be empty, or left out.
 - The messages are astra-tools' words, written per keyword. jsonschema's own show only through
   the fallback at `src/astra/contract.py:256`, which no keyword of the 0.1 schemas reaches.
 - The report is sorted by place, then code: `MISSING_FIELD` before `UNKNOWN_FIELD`.
@@ -261,7 +263,7 @@ report   UNKNOWN_FIELD at /outputs/points/recipe 19:7 key comand: `comand` isn't
 report   MISSING_FIELD at /outputs/points/recipe 19:7: `recipe` lacks `command`
 $ git checkout -q astra.yaml
 $ python -c 'from astra.diagnostics import Catalogue; c = Catalogue.load(); print(c.version, "|", len(c.errors), "error locations"); by = {}; [by.setdefault(code, set()).add(key.rpartition("/")[2]) for key, code in c.errors.items()]; [print(code, *sorted(kws)) for code, kws in sorted(by.items())]'
-ASTRA rule catalogue, schema version dev | 296 error locations
+ASTRA rule catalogue, schema version dev | 295 error locations
 DUPLICATE_ENTRY uniqueItems
 EMPTY_COLLECTION minItems minProperties
 INVALID_COMMIT pattern
@@ -279,18 +281,19 @@ URL_WITHOUT_COMMIT if required
 WRONG_TYPE type
 ```
 
-The last command groups the 296 keys by code and prints the keyword (the key's last segment)
+The last command groups the 295 keys by code and prints the keyword (the key's last segment)
 behind each.
 
 What to notice:
 
 - A keyword location is the schema's `$id`, `#`, the pointer to the failing subschema once
   every `$ref` is resolved (`$defs/Recipe`, not a path through `outputs`), then the keyword.
-  Step 3's empty map is `…#/properties/outputs/minProperties`, its empty list
+  Step 3's empty map is
+  `…#/$defs/Decision__identifier_optional/properties/options/minProperties`, its empty list
   `…#/$defs/Output__identifier_optional/properties/inputs/minItems`.
 - The `$id` says `/dev/`, as chapter 1's step 6 showed: a release's say `/0.1/`, so each key
   names its minor version ([Schema files](https://astra-spec.org/0.1/specification/#schema-files)).
-- 296 locations, every one a schema-layer code. The map is many to one: every `type` keyword is
+- 295 locations, every one a schema-layer code. The map is many to one: every `type` keyword is
   `WRONG_TYPE`, every `required` outside an `allOf` check `MISSING_FIELD`, and so is the one
   inside the check that an output other than a switch has a `type`, a `format` and a `recipe`. A
   keyword alone doesn't give the code: `pattern` is one of five codes, by where it sits.
@@ -697,10 +700,11 @@ astra.yaml: invalid, 1 error(s), 0 warning(s)
 $ git checkout -q astra.yaml
 ```
 
-- `EMPTY_COLLECTION` covers `outputs`, `options`, `cases`, `evidence` and every list of
-  strings (its row in [Rules](https://astra-spec.org/0.1/specification/#rules)), not `inputs`,
-  so the file is a valid document. The schema has a `minProperties` on `outputs` (step 3's
-  `outputs: {}`) and none on `inputs`.
+- `EMPTY_COLLECTION` covers `options`, `cases`, `evidence` and every list of strings (its row
+  in [Rules](https://astra-spec.org/0.1/specification/#rules)), and no map at the top of the
+  file, so the file is a valid document: `inputs: {}` passes, as `outputs: {}` would. The
+  schema's `minProperties` are on a decision's `options` (step 3's `options: {}`) and a
+  switch's `cases`.
 - The validator then finds that `points`' entry `config` names nothing (13:14, the file is
   four lines shorter). The command's `{inputs.config}` still matches that entry as written, so
   no `UNDECLARED_TEMPLATE_REF`.

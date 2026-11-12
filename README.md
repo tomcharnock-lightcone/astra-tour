@@ -20,10 +20,10 @@ nix develop          # Python 3.14, uv, git, jq, perl, as the flake pins them
 ```
 
 `bootstrap.sh` clones astra-tools and astra-spec into `repos/` (git-ignored), checks out
-astra-tools `bf5650f` (the head of its `v0.1-rebuild`) and, beside it, astra-spec at the commit
-in its `astra-spec.pin` (`31a1a8b`, the short specification, with switches), and builds
-astra-tools' environment with every extra and the dev tools. It clones from GitHub; to clone
-from another remote that has those commits:
+astra-tools `a01c665` (the head of its `v0.1-rebuild`) and, beside it, astra-spec at the commit
+in its `astra-spec.pin` (`e5fe476`, the short specification, with switches, where `outputs` is
+optional), and builds astra-tools' environment with every extra and the dev tools. It clones
+from GitHub; to clone from another remote that has those commits:
 
 ```bash
 ASTRA_TOOLS_URL=<gitea>/astra-tools.git ASTRA_SPEC_URL=<gitea>/astra-spec.git ./bootstrap.sh
@@ -70,7 +70,7 @@ Things to know before step 1:
   replaced, which astra-tools' code still cites: astra-spec's tag `v0.1-long-spec`, which the
   clone has (`git -C repos/astra-spec show v0.1-long-spec:docs/specification.md`).
   `design §n` is astra-tools' `design/2026-11-07-v0.1-tooling-design.md`.
-  `src/astra/<path>.py:<line>` points into astra-tools at `bf5650f`. `examples/…` is the tour's
+  `src/astra/<path>.py:<line>` points into astra-tools at `a01c665`. `examples/…` is the tour's
   copy of astra-examples.
 - **The specification versus astra-tools.** Each chapter says which is which. These are
   astra-tools' own: the three own codes, the plan's notes, the four JSON shapes, the exit

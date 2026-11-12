@@ -42,10 +42,10 @@ $ cd work/06/build/line-fit
 - `ASTRA_TOOLS` is the astra-tools checkout whose `src/astra` the `python` on PATH imports
   (`repos/astra-tools`, which `bootstrap.sh` made): the folder that holds `src/astra/api.py`.
   Steps 7, 9 and 10 grep it and run its tests, read only.
-- The whole chapter assumes that checkout at `bf5650f` (the head of its `v0.1-rebuild`), its
+- The whole chapter assumes that checkout at `a01c665` (the head of its `v0.1-rebuild`), its
   venv built with astra-spec installed from `../astra-spec-pinned` at the commit in its
-  `astra-spec.pin` (`31a1a8b`, the short specification with switches), as its CLAUDE.md's
-  *Development* says and `bootstrap.sh` does.
+  `astra-spec.pin` (`e5fe476`, the short specification with switches, where `outputs` is
+  optional), as its CLAUDE.md's *Development* says and `bootstrap.sh` does.
 - The ids hold only where `python3 --version` prints 3.14 after `source env.sh`: run.py's
   records name the `python3` on PATH (`urn:astra-examples:cpython-3.14`). On another version,
   every id from noisy-line's `Build the points` on differs (the setup warns), and so do the
@@ -482,7 +482,7 @@ Rule(code='UNKNOWN_OPTION', layer='validator', level='MUST', statement="Each opt
 >>> list(OWN)
 ['UNSUPPORTED_SPEC_VERSION', 'REMOTE_UNREACHABLE', 'COMMIT_NOT_ANCESTOR']
 >>> catalogue.version, len(catalogue.rules), len(catalogue.errors)
-('ASTRA rule catalogue, schema version dev', 64, 296)
+('ASTRA rule catalogue, schema version dev', 64, 295)
 >>> exit()
 $ astra rules UNKNOWN_OPTION
 UNKNOWN_OPTION
@@ -783,10 +783,10 @@ How the suite is organised, and how to run one test of it.
 ```console
 $ cd "$ASTRA_TOOLS"
 $ cat astra-spec.pin
-31a1a8b26117f505563b2bc2eeb00db2f3d4aa89
+e5fe476bd41a77d8c35dd7fee27cc779383f89b4
 $ python -m pytest -q -p no:cacheprovider --collect-only | sed -n 's/::.*//p' | sort | uniq -c | sort -rn | head -8
-    131 tests/test_fixtures.py
-    122 tests/test_conformance.py
+    132 tests/test_fixtures.py
+    124 tests/test_conformance.py
      80 tests/test_check.py
      73 tests/test_import_cost.py
      55 tests/test_validate.py
@@ -807,7 +807,7 @@ PASSED tests/test_conformance.py::test_a_case_gives_its_verdict[067-option-witho
 PASSED tests/test_conformance.py::test_a_case_gives_its_verdict[078-case-keyed-by-an-unknown-option]
 PASSED tests/test_conformance.py::test_a_case_gives_its_verdict[090-case-on-an-excluded-option-uses-statically]
 PASSED tests/test_conformance.py::test_a_case_gives_its_verdict[105-switch-decision-selects-an-excluded-option]
-8 passed, 114 deselected in …s
+8 passed, 116 deselected in …s
 $ cd "$TOUR/work/06/build/line-fit"
 ```
 
@@ -820,15 +820,15 @@ What to notice:
 - The oracle is astra-spec (design §1, principle 6, which names its fixtures, examples and
   sections), now through its conformance suite (design §4.11), at the commit in
   `astra-spec.pin`. `test_fixtures.py` runs the suite's documents (parse and schema layers),
-  `test_conformance.py` its 121 analysis cases, and one test that some are found.
+  `test_conformance.py` its 123 analysis cases, and one test that some are found.
 - `test_codes.py` has one case per validator code, 34: rules.json's 31 and astra-tools' own
   three, and two tests that compare `CASES` and `unchecked` with the catalogue. The modules
   beside it, one per section (`test_decisions.py`, `test_inputs.py`, …), hold each rule's
   breaking and keeping cases in full, and the design §4.13 cases.
 - Switches have modules of their own: `test_switches.py` for binding and the validator's rules
   on them, `test_switches_plan.py` for the plan, the view and the check through them. The
-  conformance cases from 065 on are about switches and what a universe uses (four of them
-  above).
+  conformance cases from 065 to 124 are about switches and what a universe uses (four of them
+  above); 125 and 126 are analyses with no outputs of their own.
 - A test id says what it covers: a code, a conformance case's folder, a module's name.
 - `test_import_cost.py` is 73 tests: one per module (67), one that every module is listed,
   three on the light commands (`--help`, completion, `validate --json`) and two on where rich

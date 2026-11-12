@@ -32,7 +32,7 @@ $ cd work/01
 
 ## 1. `astra init`: the file, and the repository it makes
 
-The smallest valid analysis, and what astra-tools does and doesn't do to git.
+A minimal analysis, and what astra-tools does and doesn't do to git.
 
 ```console
 $ astra init first
@@ -59,9 +59,10 @@ exit code 2
 
 What to notice
 
-- The file holds the two top-level fields the schema requires, `spec_version` and `outputs`,
-  and one output with the fields an output requires: `type`, `format`, and a `recipe` with its
-  `command` (`MISSING_FIELD`).
+- The file holds `spec_version`, the one top-level field the schema requires, and one output
+  with the fields an output requires: `type`, `format`, and a `recipe` with its `command`
+  (`MISSING_FIELD`). `outputs` itself may be empty or left out: an analysis need not make
+  anything.
 - `src/result.py` doesn't exist, and nothing says so: no validator rule and no plan note
   checks that a recipe's code exists. `CODE_OUTSIDE_ANALYSIS` is a runner `SHOULD`
   ([Rules](https://astra-spec.org/0.1/specification/#rules)). The
@@ -390,10 +391,10 @@ $ python -c 'import astra, pathlib; [print(sorted(p.name for p in pathlib.Path(d
 ['schema']
 ['api.py', 'cache.py', 'check.py', 'cli', 'contract.py', 'diagnostics.py', 'environments.py', 'evidence', 'grammar.py', 'hashing.py', 'history.py', 'load.py', 'model.py', 'plan.py', 'py.typed', 'records.py', 'reference.py', 'rules', 'sources', 'stack.py', 'universes.py', 'validate.py', 'view.py']
 $ python -c 'import astra.schema, pathlib; print(sorted(p.name for p in pathlib.Path(*astra.schema.__path__, "generated").iterdir()))'
-['analysis.schema.json', 'provenance.context.jsonld', 'provenance.open.schema.json', 'provenance.schema.json', 'rules.json']
+['analysis.py', 'analysis.schema.json', 'provenance.context.jsonld', 'provenance.open.schema.json', 'provenance.py', 'provenance.schema.json', 'rules.json']
 $ RULES=$(python -c 'from importlib.resources import files; print(files("astra.schema") / "generated" / "rules.json")')
 $ jq -c '{comment: ."$comment", rules: (.rules | length), errors: (.errors | length)}' "$RULES"
-{"comment":"ASTRA rule catalogue, schema version dev","rules":64,"errors":296}
+{"comment":"ASTRA rule catalogue, schema version dev","rules":64,"errors":295}
 $ jq -c '[.rules[].layer] | group_by(.) | map({(.[0]): length}) | add' "$RULES"
 {"check":7,"parse":1,"runner":10,"schema":15,"validator":31}
 $ jq -c '.rules[] | select(.code == "STALE_RESULT")' "$RULES"
@@ -435,7 +436,7 @@ Try 'astra rules --help' for help.
 Error: Invalid value for CODE: no rule has the code NO_UNIVERSES
 exit code 2
 $ astra schema show analysis | jq -c '{"$schema", "$id", required}'
-{"$schema":"https://json-schema.org/draft/2019-09/schema","$id":"https://w3id.org/astra/dev/analysis.schema.json","required":["spec_version","outputs"]}
+{"$schema":"https://json-schema.org/draft/2019-09/schema","$id":"https://w3id.org/astra/dev/analysis.schema.json","required":["spec_version"]}
 $ astra schema show analysis | cmp - "$(python -c 'from astra.contract import schema_file; print(schema_file("analysis"))')" && echo identical
 identical
 ```
@@ -446,7 +447,9 @@ What to notice
   installed data (`docs/llms.txt`, which `astra guide` prints), astra-spec's `schema` package,
   and astra-tools' modules. An `__init__.py` in any of them would hide the others.
 - `generated/` holds the five files of the specification's table
-  ([Schema files](https://astra-spec.org/0.1/specification/#schema-files)).
+  ([Schema files](https://astra-spec.org/0.1/specification/#schema-files)), and `analysis.py`
+  and `provenance.py`: Pydantic models of the two documents, which astra-spec ships behind its
+  `pydantic` extra and astra-tools doesn't use.
 - `$comment` says `dev`, and the `$id`s carry `/dev/`: astra-spec is installed from a source
   tree, not a release, whose files would carry `/0.1/`. The keys of `errors` carry the `$id`,
   so they follow it.
@@ -533,7 +536,7 @@ $ python -q
 >>> from astra.diagnostics import Catalogue
 >>> catalogue = Catalogue.load()
 >>> catalogue.version, len(catalogue.rules), len(catalogue.errors)
-('ASTRA rule catalogue, schema version dev', 64, 296)
+('ASTRA rule catalogue, schema version dev', 64, 295)
 >>> from astra.contract import Contract
 >>> contract = Contract.load(catalogue)
 >>> contract.check_analysis(doc, "astra.yaml")
